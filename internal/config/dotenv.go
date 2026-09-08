@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	PORT           string
 	MAIN_SERVER    string
 	PROXY_SERVER_1 string
 	PROXY_SERVER_2 string
@@ -21,9 +22,8 @@ func Load() (*Config, error) {
 		log.Fatal(".env file can't find")
 	}
 
-	
-
 	var config *Config = &Config{
+		PORT:           os.Getenv("PORT"),
 		MAIN_SERVER:    os.Getenv("MAIN_SERVER"),
 		PROXY_SERVER_1: os.Getenv("PROXY_SERVER_1"),
 		PROXY_SERVER_2: os.Getenv("PROXY_SERVER_2"),

@@ -34,6 +34,10 @@ func main() {
 	}
 	mux := http.NewServeMux()
 
+	// Proxy routers
+	mux.HandleFunc("/ping", server.Ping)
+	mux.HandleFunc("/health/live", server.HealthProxy)
+
 	servers := []string{
 		cfg.PROXY_SERVER_1,
 		cfg.PROXY_SERVER_2,
@@ -58,15 +62,28 @@ func main() {
 		mux.HandleFunc(prefix, server.ProxyHandler(prefix, proxy))
 	}
 
-	log.Println("server is running")
+	server := &http.Server{
+		Addr:              cfg.PORT,
+		Handler:           requestLogger(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
+	if server.Addr == "" {
+		server.Addr = ":8080"
+	} else if !strings.Contains(server.Addr, ":") {
+		server.Addr = ":" + server.Addr
+	}
 
-	if err := http.ListenAndServe(
-		cfg.MAIN_SERVER,
-		requestLogger(mux),
-	); err != nil {
-		log.Fatal(err)
-	}
-	if err := http.ListenAndServe(cfg.MAIN_SERVER, mux); err != nil {
-		log.Fatal(err)
-	}
+	done := make(chan struct{})
+	go func() {
+		log.Printf("server is running on %s", server.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+	// keeps main alive forever
+	<-done
 }
