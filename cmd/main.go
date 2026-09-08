@@ -34,8 +34,6 @@ func main() {
 	}
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/ping", server.CheckServer)
-
 	servers := []string{
 		cfg.PROXY_SERVER_1,
 		cfg.PROXY_SERVER_2,
