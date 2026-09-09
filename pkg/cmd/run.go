@@ -3,11 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
-	"github.com/elrefai99/Leoxy/internal/config"
-	"github.com/elrefai99/Leoxy/internal/server"
+	"github.com/elrefai99/Leoxy/pkg/internal/config"
+	"github.com/elrefai99/Leoxy/pkg/internal/server"
 )
 
 func requestLogger(next http.Handler) http.Handler {
@@ -36,32 +37,24 @@ func runServer() {
 	mux.HandleFunc("/ping", server.Ping)
 	mux.HandleFunc("/health/live", server.HealthProxy)
 
-	// servers := []string{
-	// 	cfg.PROXY_SERVER_1,
-	// 	cfg.PROXY_SERVER_2,
-	// 	cfg.PROXY_SERVER_3,
-	// 	cfg.PROXY_SERVER_4,
-	// }
+	for _, resource := range cfg.Upstream {
+		target, err := url.Parse(resource.ServerURL)
+		if err != nil || target.Scheme == "" || target.Host == "" {
+			log.Printf("invalid upstream %q: %v", resource.ServerURL, err)
+			continue
+		}
 
-	// for index, resource := range servers {
-	// 	resource = strings.TrimSpace(resource)
-	// 	if resource == "" {
-	// 		continue
-	// 	}
+		prefix := resource.Path
+		if prefix == "" {
+			prefix = "/"
+		}
 
-	// 	parsedURL, err := url.Parse(resource)
-	// 	if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
-	// 		log.Printf("invalid proxy server %q: %v", resource, err)
-	// 		continue
-	// 	}
-
-	// 	proxy := server.NewProxy(parsedURL)
-	// 	prefix := "/proxy/" + strconv.Itoa(index+1) + "/"
-	// 	mux.HandleFunc(prefix, server.ProxyHandler(prefix, proxy))
-	// }
+		proxy := server.NewProxy(target)
+		mux.HandleFunc(prefix, server.ProxyHandler(prefix, proxy))
+	}
 
 	server := &http.Server{
-		Addr:              cfg.PORT,
+		Addr:              cfg.Server.Port,
 		Handler:           requestLogger(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,

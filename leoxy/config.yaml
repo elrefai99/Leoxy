@@ -1,0 +1,12 @@
+server:
+  port: "8080"
+
+upstream:
+  - name: "Backend"
+    path: /api
+    ip: true
+    server_url: "http://localhost:7000"
+
+  - name: "Frontend"
+    path: /
+    server_url: "http://localhost:3000"
