@@ -8,17 +8,17 @@ import (
 )
 
 type Upstream struct {
-	Name      string
-	Path      string
-	IP        bool
-	ServerURL string
+	Name      string `mapstructure:"name"`
+	Path      string `mapstructure:"path"`
+	IP        bool   `mapstructure:"ip"`
+	ServerURL string `mapstructure:"server_url"`
 }
 
 type ServerConfig struct {
 	Server struct {
-		Port string
-	}
-	Upstream []Upstream
+		Port string `mapstructure:"port"`
+	} `mapstructure:"server"`
+	Upstream []Upstream `mapstructure:"upstream"`
 }
 
 var Config *ServerConfig
