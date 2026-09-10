@@ -5,6 +5,8 @@ upstream:
   - name: "Backend"
     path: /api
     ip: true
+    body: 10 # By MB only
+    limit_request: 100
     server_url: "http://localhost:7000"
 
   - name: "Frontend"

@@ -8,10 +8,12 @@ import (
 )
 
 type Upstream struct {
-	Name      string `mapstructure:"name"`
-	Path      string `mapstructure:"path"`
-	IP        bool   `mapstructure:"ip"`
-	ServerURL string `mapstructure:"server_url"`
+	Name          string `mapstructure:"name"`
+	Path          string `mapstructure:"path"`
+	IP            bool   `mapstructure:"ip"`
+	ServerURL     string `mapstructure:"server_url"`
+	Limit_request int    `mapstructure:"limit_request"`
+	Body          int    `mapstructure:"body"`
 }
 
 type ServerConfig struct {

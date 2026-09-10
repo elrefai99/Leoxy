@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/elrefai99/Leoxy/pkg/internal/config"
+	"github.com/elrefai99/Leoxy/pkg/internal/middleware"
 	"github.com/elrefai99/Leoxy/pkg/internal/server"
 )
 
@@ -50,7 +51,14 @@ func runServer() {
 		}
 
 		proxy := server.NewProxy(target, resource.IP)
-		mux.HandleFunc(prefix, server.ProxyHandler(prefix, proxy))
+		var handler http.Handler = server.ProxyHandler(prefix, proxy)
+		if resource.Body > 0 {
+			handler = middleware.Body(resource.Body, handler)
+		}
+		if resource.Limit_request > 0 {
+			handler = middleware.LimitRequest(resource.Limit_request, handler)
+		}
+		mux.Handle(prefix, handler)
 	}
 
 	server := &http.Server{
