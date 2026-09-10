@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "v0.2.3"
+const version = "v0.3.5"
 
 var rootCmd = &cobra.Command{
 	Use:     "leoxy",

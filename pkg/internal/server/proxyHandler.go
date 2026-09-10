@@ -23,7 +23,7 @@ func NewProxy(target *url.URL, forwardIP bool) *httputil.ReverseProxy {
 	return proxy
 }
 
-func ProxyHandler(prefix string, proxy *httputil.ReverseProxy) http.HandlerFunc {
+func ProxyHandler(_ string, proxy *httputil.ReverseProxy) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		proxy.ServeHTTP(w, r)
 	}

@@ -10,22 +10,8 @@ import (
 	"github.com/elrefai99/Leoxy/pkg/internal/config"
 	"github.com/elrefai99/Leoxy/pkg/internal/middleware"
 	"github.com/elrefai99/Leoxy/pkg/internal/server"
+	"github.com/elrefai99/Leoxy/pkg/internal/utils"
 )
-
-func requestLogger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		next.ServeHTTP(w, r)
-
-		log.Printf("%s %s %s %v",
-			r.Method,
-			r.URL.RequestURI(),
-			r.RemoteAddr,
-			time.Since(start),
-		)
-	})
-}
 
 func runServer() {
 	cfg, err := config.Load()
@@ -58,12 +44,19 @@ func runServer() {
 		if resource.Limit_request > 0 {
 			handler = middleware.LimitRequest(resource.Limit_request, handler)
 		}
-		mux.Handle(prefix, handler)
+
+		if prefix == "/" {
+			mux.Handle("/", handler)
+		} else {
+			prefix = strings.TrimRight(prefix, "/")
+			mux.Handle(prefix, handler)
+			mux.Handle(prefix+"/", handler)
+		}
 	}
 
 	server := &http.Server{
 		Addr:              cfg.Server.Port,
-		Handler:           requestLogger(mux),
+		Handler:           utils.RequestLogger(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -78,7 +71,7 @@ func runServer() {
 
 	done := make(chan struct{})
 	go func() {
-		log.Printf("server is running on %s", server.Addr)
+		log.Println("Leoxy Success Runner")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
