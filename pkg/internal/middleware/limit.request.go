@@ -33,7 +33,7 @@ func LimitRequest(limit int, next http.Handler) http.Handler {
 		counter.count++
 		clients[clientIP] = counter
 		allowed := counter.count <= limit
-		mutex.Unlock()
+		defer mutex.Unlock()
 
 		if !allowed {
 			w.Header().Set("Retry-After", "60")
