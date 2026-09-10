@@ -49,7 +49,7 @@ func runServer() {
 			prefix = "/"
 		}
 
-		proxy := server.NewProxy(target)
+		proxy := server.NewProxy(target, resource.IP)
 		mux.HandleFunc(prefix, server.ProxyHandler(prefix, proxy))
 	}
 
