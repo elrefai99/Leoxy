@@ -1,71 +1,79 @@
-# Leoxy Proxy Service
+# Leoxy
 
-The Leoxy proxy service exposes a small HTTP reverse proxy that forwards requests to configured upstream servers. It also provides a health-check endpoint.
+Leoxy is a lightweight HTTP reverse proxy built in Go. It routes incoming requests to configurable upstream servers based on path prefixes, with built-in health-check endpoints and request logging.
 
-## Run locally
+## Features
 
-From this directory, provide the required environment configuration and run:
+- **Reverse proxy** – forwards requests to multiple backend services using `httputil.ReverseProxy`.
+- **Path-based routing** – each upstream is mapped to a configurable path prefix; the prefix is stripped before forwarding.
+- **Health checks** – exposes liveness and ping endpoints for monitoring.
+- **Request logging** – logs method, path, remote address, and latency for every request.
+- **CLI** – start, stop, and run the service as a background process with `cobra`-based subcommands.
+- **YAML configuration** – upstreams and server settings are defined in `leoxy/config.yaml` via `viper`.
+- **Timeouts** – explicit read/write/idle timeouts and max header size for safety.
 
-```bash
-go run ./cmd
+## Configuration
+
+Create `leoxy/config.yaml`:
+
+```yaml
+server:
+  port: "8081"
+
+upstream:
+  - name: "Backend"
+    path: /api
+    ip: true
+    server_url: "http://localhost:7000"
+
+  - name: "Frontend"
+    path: /
+    server_url: "http://localhost:3000"
 ```
 
-To build the service:
+| Key | Description |
+|-----|-------------|
+| `server.port` | Listen address (defaults to `:8080`; a bare number gets `:` prepended). |
+| `upstream[].name` | Identifier for the upstream. |
+| `upstream[].path` | Route prefix that triggers this upstream (defaults to `/`). |
+| `upstream[].server_url` | Absolute URL of the backend; validated at startup. |
+| `upstream[].ip` | Flag to capture and forward the client IP. |
+
+Routes are registered only for upstreams with valid, parseable URLs.
+
+## CLI usage
 
 ```bash
-go build ./...
-```
-
-To run the tests:
-
-```bash
-go test ./...
+leoxy run        # start the server inline
+leoxy start      # start in the background (writes .leoxy.pid)
+leoxy stop       # stop the background process
+leoxy version    # print version
 ```
 
 ## Endpoints
 
-### Health check
+### Ping
 
 ```http
 GET /ping
 ```
 
-Returns:
+Returns `PONG`.
 
-```text
-ping
-```
-
-### Proxy routes
-
-Configured upstreams are available under numbered paths:
-
-```text
-/proxy/1/*  -> PROXY_SERVER_1
-/proxy/2/*  -> PROXY_SERVER_2
-/proxy/3/*  -> PROXY_SERVER_3
-/proxy/4/*  -> PROXY_SERVER_4
-```
-
-The numbered prefix is removed before forwarding the request. For example:
+### Liveness
 
 ```http
-GET /proxy/1/api/tasks
+GET /health/live
 ```
 
-is forwarded to the first upstream as:
+Returns `{"status":"ok"}`.
 
-```http
-GET /api/tasks
-```
+### Proxy
 
-Routes are registered only for upstream servers with valid configured URLs.
-
-## Project structure
+Each configured upstream is available at its `path` prefix:
 
 ```text
-cmd/main.go                         Service entrypoint
-internal/config/dotenv.go           Environment configuration loader
-internal/server/proxyHandler.go    Reverse-proxy handler
-internal/server/serverCheck.go     Health-check handler
+/<prefix>/*  ->  upstream server_url
 ```
+
+The prefix is stripped before forwarding. For example, with the config above, `GET /api/tasks` is forwarded to `http://localhost:7000/tasks`.
