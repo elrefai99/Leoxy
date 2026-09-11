@@ -1,11 +1,6 @@
 # Logs
 logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
 .DS_Store
 dist
@@ -13,6 +8,7 @@ dist-ssr
 coverage
 *.local
 roadmap.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -26,8 +22,5 @@ roadmap.md
 *.tsbuildinfo
 .env
 .env.dev
-sw.js
-workbox-c28420ab.js
-dev-dist
-package/json
 tmp
+*.exe
