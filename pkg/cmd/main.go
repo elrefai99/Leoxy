@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "v0.3.5"
+const version = "v0.4.5"
 
 var rootCmd = &cobra.Command{
 	Use:     "leoxy",
@@ -26,10 +26,20 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+var runCmd = &cobra.Command{
+	Use:    "run",
+	Short:  "Run the server",
+	Hidden: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		runServer()
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(stopCmd)
+	rootCmd.AddCommand(runCmd)
 
 }
 

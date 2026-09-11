@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -23,12 +25,19 @@ var stopCmd = &cobra.Command{
 			return fmt.Errorf("invalid PID file")
 		}
 
-		process, err := os.FindProcess(pid)
-		if err != nil {
-			return err
+		if runtime.GOOS == "windows" {
+			err = exec.Command("taskkill", "/PID", strconv.Itoa(pid), "/T", "/F").Run()
+		} else {
+			process, findErr := os.FindProcess(pid)
+			if findErr != nil {
+				err = findErr
+			} else {
+				err = process.Kill()
+			}
 		}
 
-		if err := process.Kill(); err != nil {
+		if err != nil {
+			_ = os.Remove(pidFile)
 			return fmt.Errorf("could not stop server: %w", err)
 		}
 
