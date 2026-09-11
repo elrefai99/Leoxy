@@ -14,6 +14,10 @@ import (
 )
 
 func runServer() {
+	if err := utils.CreateConfig(); err != nil {
+		log.Fatal(err)
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
