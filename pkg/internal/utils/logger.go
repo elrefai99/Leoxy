@@ -8,37 +8,64 @@ import (
 	"time"
 )
 
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *statusWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *statusWriter) Write(data []byte) (int, error) {
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	return w.ResponseWriter.Write(data)
+}
+
 func RequestLogger(next http.Handler) http.Handler {
-	err := os.MkdirAll("log", 0755)
-	if err != nil {
+	if err := os.MkdirAll("log", 0755); err != nil {
 		log.Fatal(err)
 	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/node_modules") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		start := time.Now()
-		go func() {
-			path := r.URL.Path
-			if strings.HasPrefix(path, "/_nuxt") || strings.Contains(path, "/node_modules") {
-				return
-			}
-			pathLog := "log/request.log"
-			file, err := os.OpenFile(pathLog, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+		writer := &statusWriter{ResponseWriter: w}
 
-			if err != nil {
-				log.Fatal(err)
-			}
+		next.ServeHTTP(writer, r)
 
-			defer file.Close()
+		message := logEntry(r, writer.status, time.Since(start))
+		writeLog("log/request.log", message)
 
-			fileData := log.New(file, "", log.LstdFlags)
-
-			fileData.Printf("%s %s %s %v",
-				r.Method,
-				r.URL.RequestURI(),
-				r.RemoteAddr,
-				time.Since(start),
-			)
-		}()
-
-		next.ServeHTTP(w, r)
+		if writer.status >= http.StatusBadRequest {
+			writeLog("log/error.log", message)
+		}
 	})
+}
+
+func logEntry(r *http.Request, status int, duration time.Duration) string {
+	return r.Method + " " +
+		r.URL.RequestURI() + " " +
+		r.RemoteAddr + " " +
+		http.StatusText(status) + " " +
+		duration.String()
+}
+
+func writeLog(path string, message string) {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("open log file %s: %v", path, err)
+		return
+	}
+	defer file.Close()
+
+	logger := log.New(file, "", log.LstdFlags)
+	logger.Println(message)
 }
