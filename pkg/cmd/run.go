@@ -35,9 +35,15 @@ func runServer() {
 			continue
 		}
 
-		prefix := resource.Path
+		prefix := strings.TrimSpace(resource.Path)
 		if prefix == "" {
 			prefix = "/"
+		}
+		if !strings.HasPrefix(prefix, "/") {
+			prefix = "/" + prefix
+		}
+		if prefix != "/" {
+			prefix = strings.TrimRight(prefix, "/")
 		}
 
 		proxy := server.NewProxy(target, resource.IP)
@@ -52,7 +58,6 @@ func runServer() {
 		if prefix == "/" {
 			mux.Handle("/", handler)
 		} else {
-			prefix = strings.TrimRight(prefix, "/")
 			mux.Handle(prefix, handler)
 			mux.Handle(prefix+"/", handler)
 		}
