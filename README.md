@@ -39,6 +39,34 @@ upstream:
 | `upstream[].server_url` | Absolute URL of the backend; validated at startup. |
 | `upstream[].ip` | Flag to capture and forward the client IP. |
 
+### Security
+
+Security settings can be placed under `server.security` for all routes or under an individual `upstream[].security` block. Rate limits are requests per minute; burst values are the initial token capacity. The `RATE_LIMIT` environment variable overrides the global per-IP `rate_limit` value.
+
+```yaml
+server:
+  security:
+    rate_limit: 100
+    rate_limit_burst: 20
+    global_rate_limit: 1000
+    global_rate_burst: 100
+    max_body: 10
+    allow_cidrs: ["10.0.0.0/8"]
+    deny_cidrs: ["10.10.0.0/16"]
+    allowed_methods: [GET, POST]
+    allowed_paths: ["/api/*"]
+    api_keys: ["replace-me"]
+    jwt_secret: "replace-me"
+    require_mtls: false
+    redis_addr: "127.0.0.1:6379"
+    redis_password: "replace-me"
+    redis_db: 0
+```
+
+API keys are accepted in `X-API-Key` or as a bearer token. JWT authentication validates HS256 signatures and the optional `exp` claim. mTLS requires the server to be deployed behind TLS with verified client certificates. Request bodies are rejected before proxying when they exceed `max_body` or the upstream `body` limit.
+
+When `redis_addr` is configured, the global limit is also enforced through Redis so multiple Leoxy instances share a minute window. Redis failures return `503` rather than silently bypassing the limit.
+
 Routes are registered only for upstreams with valid, parseable URLs.
 
 ## CLI usage

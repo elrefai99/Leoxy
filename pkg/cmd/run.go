@@ -23,7 +23,6 @@ func runServer() {
 		log.Fatal(err)
 	}
 	mux := http.NewServeMux()
-
 	// Proxy routers
 	mux.HandleFunc("/ping", server.Ping)
 	mux.HandleFunc("/health/live", server.HealthProxy)
@@ -44,15 +43,43 @@ func runServer() {
 		}
 		if prefix != "/" {
 			prefix = strings.TrimRight(prefix, "/")
+			if prefix == "" {
+				prefix = "/"
+			}
 		}
 
 		proxy := server.NewProxy(target, resource.IP)
 		var handler http.Handler = server.ProxyHandler(prefix, proxy)
-		if resource.Body > 0 {
-			handler = middleware.Body(resource.Body, handler)
+		security := resource.Security
+		if security.MaxBody <= 0 {
+			security.MaxBody = resource.Body
 		}
-		if resource.Limit_request > 0 {
-			handler = middleware.LimitRequest(resource.Limit_request, handler)
+		secured, err := middleware.AccessControl(
+			security.AllowCIDRs,
+			security.DenyCIDRs,
+			security.AllowedMethods,
+			security.AllowedPaths,
+			security.APIKeys,
+			security.JWTSecret,
+			security.RequireMTLS,
+			handler,
+		)
+		if err != nil {
+			log.Fatalf("invalid security configuration for %q: %v", resource.Name, err)
+		}
+		handler = secured
+		handler = middleware.RateLimit(
+			security.RateLimit,
+			security.RateLimitBurst,
+			security.RouteRateLimit,
+			security.RouteRateBurst,
+			0,
+			0,
+			prefix,
+			handler,
+		)
+		if security.MaxBody > 0 {
+			handler = middleware.Body(security.MaxBody, handler)
 		}
 
 		if prefix == "/" {
@@ -63,9 +90,44 @@ func runServer() {
 		}
 	}
 
+	globalHandler, err := middleware.AccessControl(
+		cfg.Server.Security.AllowCIDRs,
+		cfg.Server.Security.DenyCIDRs,
+		cfg.Server.Security.AllowedMethods,
+		cfg.Server.Security.AllowedPaths,
+		cfg.Server.Security.APIKeys,
+		cfg.Server.Security.JWTSecret,
+		cfg.Server.Security.RequireMTLS,
+		mux,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	globalHandler = middleware.RateLimit(
+		cfg.Server.Security.RateLimit,
+		cfg.Server.Security.RateLimitBurst,
+		0,
+		0,
+		cfg.Server.Security.GlobalRateLimit,
+		cfg.Server.Security.GlobalRateBurst,
+		"global",
+		globalHandler,
+	)
+	globalHandler = middleware.RedisRateLimit(
+		cfg.Server.Security.RedisAddr,
+		cfg.Server.Security.RedisPassword,
+		cfg.Server.Security.RedisDB,
+		cfg.Server.Security.GlobalRateLimit,
+		"leoxy:global",
+		globalHandler,
+	)
+	if cfg.Server.Security.MaxBody > 0 {
+		globalHandler = middleware.Body(cfg.Server.Security.MaxBody, globalHandler)
+	}
+
 	server := &http.Server{
 		Addr:              cfg.Server.Port,
-		Handler:           utils.RequestLogger(mux),
+		Handler:           utils.RequestLogger(globalHandler),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,

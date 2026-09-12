@@ -1,13 +1,22 @@
 server:
   port: "8080"
+  security:
+    rate_limit: 100
+    rate_limit_burst: 20
+    global_rate_limit: 1000
+    global_rate_burst: 100
+    max_body: 10
+    allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
 
 upstream:
   - name: "Backend"
     path: /api
     ip: true
     body: 10 # By MB only
-    limit_request: 100
     server_url: "http://localhost:60459"
+    security:
+      route_rate_limit: 100
+      route_rate_burst: 20
 
   - name: "Frontend"
     path: /
