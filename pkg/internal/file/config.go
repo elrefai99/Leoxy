@@ -1,9 +1,11 @@
-package utils
+package file
 
 import "os"
 
 const defaultConfig = `server:
   port: "8080"
+  security:
+    allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
 
 upstream:
   - name: "server_runner"

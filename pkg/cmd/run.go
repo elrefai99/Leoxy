@@ -8,13 +8,14 @@ import (
 	"time"
 
 	"github.com/elrefai99/Leoxy/pkg/internal/config"
+	"github.com/elrefai99/Leoxy/pkg/internal/file"
 	"github.com/elrefai99/Leoxy/pkg/internal/middleware"
 	"github.com/elrefai99/Leoxy/pkg/internal/server"
 	"github.com/elrefai99/Leoxy/pkg/internal/utils"
 )
 
 func runServer() {
-	if err := utils.CreateConfig(); err != nil {
+	if err := file.CreateConfig(); err != nil {
 		log.Fatal(err)
 	}
 
