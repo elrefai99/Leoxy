@@ -27,6 +27,9 @@ func runServer() {
 	// Proxy routers
 	mux.HandleFunc("/ping", server.Ping)
 	mux.HandleFunc("/health/live", server.HealthProxy)
+	mux.HandleFunc("/leoxy", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "docs/index.html")
+	})
 
 	for _, resource := range cfg.Upstream {
 		target, err := url.Parse(resource.ServerURL)
