@@ -2,6 +2,28 @@
 
 Leoxy is a lightweight HTTP reverse proxy built in Go. It routes incoming requests to configurable upstream servers based on path prefixes, with built-in health-check endpoints and request logging.
 
+## Deployment architecture
+
+Leoxy is designed to run behind Nginx:
+
+```text
+Client -> Nginx -> Leoxy -> Application servers
+```
+
+Nginx is responsible for public HTTPS termination and forwarding requests to Leoxy on a private network. Leoxy applies request-body and rate limits, then routes approved requests to the configured application servers.
+
+Do not expose Leoxy directly to the public Internet when Nginx is the TLS terminator. Bind it to a private interface or firewall its port so only Nginx can reach it.
+
+### Request-body limits
+
+Set `server.security.max_body` for a global maximum request-body size in megabytes. Set `upstream[].body` or `upstream[].security.max_body` to apply a limit to one upstream. Requests above the configured limit are rejected with `413 Request Entity Too Large` before they reach the application server.
+
+### Rate limits
+
+Leoxy supports per-IP, per-route, and global rate limits. Configure them under `server.security` for proxy-wide limits and `upstream[].security` for route-specific limits. Rates are requests per minute and burst values define the initial request capacity.
+
+When Nginx forwards traffic, ensure Leoxy receives client-IP headers only from that trusted Nginx instance. Do not allow clients to connect directly to Leoxy and submit forwarded-IP headers.
+
 ## Features
 
 - **Reverse proxy** – forwards requests to multiple backend services using `httputil.ReverseProxy`.
