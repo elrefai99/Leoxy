@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/elrefai99/Leoxy/pkg/internal/config"
@@ -14,10 +15,14 @@ import (
 	"github.com/elrefai99/Leoxy/pkg/internal/utils"
 )
 
+var once sync.Once
+
 func runServer() {
-	if err := file.CreateConfig(); err != nil {
-		log.Fatal(err)
-	}
+	once.Do(func() {
+		if err := file.CreateConfig(); err != nil {
+			log.Fatal(err)
+		}
+	})
 
 	cfg, err := config.Load()
 	if err != nil {
