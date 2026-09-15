@@ -77,15 +77,14 @@ server:
     deny_cidrs: ["10.10.0.0/16"]
     allowed_methods: [GET, POST]
     allowed_paths: ["/api/*"]
-    api_keys: ["replace-me"]
-    jwt_secret: "replace-me"
+    # Set API_KEYS, JWT_SECRET, and REDIS_PASSWORD in the environment.
     require_mtls: false
     redis_addr: "127.0.0.1:6379"
     redis_password: "replace-me"
     redis_db: 0
 ```
 
-API keys are accepted in `X-API-Key` or as a bearer token. JWT authentication validates HS256 signatures and the optional `exp` claim. mTLS requires the server to be deployed behind TLS with verified client certificates. Request bodies are rejected before proxying when they exceed `max_body` or the upstream `body` limit.
+API keys are accepted in `X-API-Key` or as a bearer token. JWT authentication validates HS256 signatures and requires `exp`; `JWT_ISSUER` and `JWT_AUDIENCE` can enforce issuer and audience. mTLS requires the server to be deployed behind TLS with verified client certificates. Request bodies are rejected before proxying when they exceed `max_body` or the upstream `body` limit.
 
 When `redis_addr` is configured, the global limit is also enforced through Redis so multiple Leoxy instances share a minute window. Redis failures return `503` rather than silently bypassing the limit.
 

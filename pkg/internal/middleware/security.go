@@ -1,22 +1,25 @@
 package middleware
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
 	"crypto/subtle"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/json"
 	"net"
 	"net/http"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/elrefai99/Leoxy/pkg/internal/utils"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-func AccessControl(allow, deny []string, methods, paths, apiKeys []string, jwtSecret string, requireMTLS bool, next http.Handler) (http.Handler, error) {
+func AccessControl(allow, deny []string, methods, paths, apiKeys []string, jwtSecret string, requireMTLS bool, next http.Handler, trustedProxyCIDRs ...string) (http.Handler, error) {
+	return accessControl(allow, deny, methods, paths, apiKeys, jwtSecret, "", "", requireMTLS, next, trustedProxyCIDRs...)
+}
+
+func AccessControlWithJWT(allow, deny []string, methods, paths, apiKeys []string, jwtSecret, jwtIssuer, jwtAudience string, requireMTLS bool, next http.Handler, trustedProxyCIDRs ...string) (http.Handler, error) {
+	return accessControl(allow, deny, methods, paths, apiKeys, jwtSecret, jwtIssuer, jwtAudience, requireMTLS, next, trustedProxyCIDRs...)
+}
+
+func accessControl(allow, deny []string, methods, paths, apiKeys []string, jwtSecret, jwtIssuer, jwtAudience string, requireMTLS bool, next http.Handler, trustedProxyCIDRs ...string) (http.Handler, error) {
 	allowed, err := networks(allow)
 	if err != nil {
 		return nil, err
@@ -26,8 +29,12 @@ func AccessControl(allow, deny []string, methods, paths, apiKeys []string, jwtSe
 		return nil, err
 	}
 	methodSet := set(methods)
+	trusted, err := networks(trustedProxyCIDRs)
+	if err != nil {
+		return nil, err
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := net.ParseIP(utils.GetIpAddress(r))
+		ip := net.ParseIP(utils.GetClientIP(r, trusted))
 		for _, network := range denied {
 			if ip != nil && network.Contains(ip) {
 				http.Error(w, "access denied", http.StatusForbidden)
@@ -56,12 +63,12 @@ func AccessControl(allow, deny []string, methods, paths, apiKeys []string, jwtSe
 			return
 		}
 		apiKeyValid := validAPIKey(r.Header.Get("Authorization"), apiKeys) || validAPIKey(r.Header.Get("X-API-Key"), apiKeys)
-		jwtValid := jwtSecret != "" && validJWT(r.Header.Get("Authorization"), jwtSecret)
+		jwtValid := jwtSecret != "" && validJWT(r.Header.Get("Authorization"), jwtSecret, jwtIssuer, jwtAudience)
 		if (len(apiKeys) > 0 || jwtSecret != "") && !apiKeyValid && !jwtValid {
 			http.Error(w, "authentication required", http.StatusUnauthorized)
 			return
 		}
-		if requireMTLS && (r.TLS == nil || len(r.TLS.PeerCertificates) == 0 || !validCertificate(r.TLS.PeerCertificates[0])) {
+		if requireMTLS && (r.TLS == nil || len(r.TLS.PeerCertificates) == 0 || len(r.TLS.VerifiedChains) == 0) {
 			http.Error(w, "client certificate required", http.StatusUnauthorized)
 			return
 		}
@@ -105,31 +112,19 @@ func validAPIKey(value string, keys []string) bool {
 	}
 	return false
 }
-func validCertificate(cert *x509.Certificate) bool {
-	return cert != nil && time.Now().After(cert.NotBefore) && time.Now().Before(cert.NotAfter)
-}
-
-func validJWT(value, secret string) bool {
-	parts := strings.Split(strings.TrimSpace(strings.TrimPrefix(value, "Bearer ")), ".")
-	if len(parts) != 3 {
-		return false
+func validJWT(value, secret, issuer, audience string) bool {
+	options := []jwt.ParserOption{jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired()}
+	if issuer != "" {
+		options = append(options, jwt.WithIssuer(issuer))
 	}
-	data, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return false
+	if audience != "" {
+		options = append(options, jwt.WithAudience(audience))
 	}
-	var claims map[string]interface{}
-	if json.Unmarshal(data, &claims) != nil {
-		return false
-	}
-	if exp, ok := claims["exp"].(float64); ok && exp < float64(time.Now().Unix()) {
-		return false
-	}
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(parts[0] + "." + parts[1]))
-	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
-	if err != nil {
-		return false
-	}
-	return subtle.ConstantTimeCompare(mac.Sum(nil), signature) == 1
+	token, err := jwt.Parse(strings.TrimSpace(strings.TrimPrefix(value, "Bearer ")), func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(secret), nil
+	}, options...)
+	return err == nil && token.Valid
 }

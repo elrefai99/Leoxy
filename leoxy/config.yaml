@@ -7,6 +7,7 @@ server:
     global_rate_burst: 100
     max_body: 10
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+    trusted_proxy_cidrs: []
 
 upstream:
   - name: "Backend"

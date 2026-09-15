@@ -35,6 +35,36 @@ func TestAccessControl(t *testing.T) {
 	}
 }
 
+func TestAccessControlIgnoresForgedClientIPHeaders(t *testing.T) {
+	handler, err := AccessControl([]string{"10.0.0.0/8"}, nil, nil, nil, nil, "", false, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "192.0.2.10:1234"
+	req.Header.Set("X-Real-IP", "10.1.1.1")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusForbidden)
+	}
+}
+
+func TestAccessControlUsesTrustedProxyForwarding(t *testing.T) {
+	handler, err := AccessControl([]string{"10.0.0.0/8"}, nil, nil, nil, nil, "", false, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }), "192.0.2.0/24")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "192.0.2.10:1234"
+	req.Header.Set("X-Forwarded-For", "10.1.1.1, 192.0.2.10")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+}
+
 func TestRateLimitBurst(t *testing.T) {
 	handler := RateLimit(1, 2, 0, 0, 0, 0, "/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }))
 	for i := 0; i < 2; i++ {

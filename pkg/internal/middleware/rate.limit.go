@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -13,12 +14,18 @@ type bucket struct {
 	updated time.Time
 }
 
-func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, route string, next http.Handler) http.Handler {
+func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, route string, next http.Handler, trustedProxyCIDRs ...[]*net.IPNet) http.Handler {
 	limits := []struct {
 		rate, burst int
 		key         func(*http.Request) string
 	}{
-		{perIP, ipBurst, func(r *http.Request) string { return "ip:" + utils.GetIpAddress(r) }},
+		{perIP, ipBurst, func(r *http.Request) string {
+			var trusted []*net.IPNet
+			if len(trustedProxyCIDRs) > 0 {
+				trusted = trustedProxyCIDRs[0]
+			}
+			return "ip:" + utils.GetClientIP(r, trusted)
+		}},
 		{perRoute, routeBurst, func(r *http.Request) string { return "route:" + route }},
 		{global, globalBurst, func(*http.Request) string { return "global" }},
 	}
@@ -35,6 +42,13 @@ func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, ro
 				}
 			}
 			lastCleanup = now
+		}
+		if len(state) > 10000 {
+			for key, current := range state {
+				if now.Sub(current.updated) >= time.Minute {
+					delete(state, key)
+				}
+			}
 		}
 		allowed := true
 		for _, limit := range limits {

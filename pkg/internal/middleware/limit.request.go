@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -13,7 +14,7 @@ type requestCounter struct {
 	startedAt time.Time
 }
 
-func LimitRequest(limit int, next http.Handler) http.Handler {
+func LimitRequest(limit int, next http.Handler, trustedProxyCIDRs ...[]*net.IPNet) http.Handler {
 	if limit <= 0 {
 		return next
 	}
@@ -22,7 +23,11 @@ func LimitRequest(limit int, next http.Handler) http.Handler {
 	clients := make(map[string]requestCounter)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		clientIP := utils.GetIpAddress(r)
+		var trusted []*net.IPNet
+		if len(trustedProxyCIDRs) > 0 {
+			trusted = trustedProxyCIDRs[0]
+		}
+		clientIP := utils.GetClientIP(r, trusted)
 		now := time.Now()
 
 		mutex.Lock()

@@ -28,6 +28,10 @@ func runServer() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	trustedProxyCIDRs, err := utils.ParseCIDRs(cfg.Server.Security.TrustedProxyCIDRs)
+	if err != nil {
+		log.Fatalf("invalid trusted proxy CIDR: %v", err)
+	}
 	mux := http.NewServeMux()
 	// Proxy routers
 	mux.HandleFunc("/ping", server.Ping)
@@ -57,21 +61,24 @@ func runServer() {
 			}
 		}
 
-		proxy := server.NewProxy(target, resource.IP)
+		proxy := server.NewProxy(target, resource.IP, trustedProxyCIDRs)
 		var handler http.Handler = server.ProxyHandler(prefix, proxy)
 		security := resource.Security
 		if security.MaxBody <= 0 {
 			security.MaxBody = resource.Body
 		}
-		secured, err := middleware.AccessControl(
+		secured, err := middleware.AccessControlWithJWT(
 			security.AllowCIDRs,
 			security.DenyCIDRs,
 			security.AllowedMethods,
 			security.AllowedPaths,
 			security.APIKeys,
 			security.JWTSecret,
+			security.JWTIssuer,
+			security.JWTAudience,
 			security.RequireMTLS,
 			handler,
+			security.TrustedProxyCIDRs...,
 		)
 		if err != nil {
 			log.Fatalf("invalid security configuration for %q: %v", resource.Name, err)
@@ -86,6 +93,7 @@ func runServer() {
 			0,
 			prefix,
 			handler,
+			trustedProxyCIDRs,
 		)
 		if security.MaxBody > 0 {
 			handler = middleware.Body(security.MaxBody, handler)
@@ -99,15 +107,18 @@ func runServer() {
 		}
 	}
 
-	globalHandler, err := middleware.AccessControl(
+	globalHandler, err := middleware.AccessControlWithJWT(
 		cfg.Server.Security.AllowCIDRs,
 		cfg.Server.Security.DenyCIDRs,
 		cfg.Server.Security.AllowedMethods,
 		cfg.Server.Security.AllowedPaths,
 		cfg.Server.Security.APIKeys,
 		cfg.Server.Security.JWTSecret,
+		cfg.Server.Security.JWTIssuer,
+		cfg.Server.Security.JWTAudience,
 		cfg.Server.Security.RequireMTLS,
 		mux,
+		cfg.Server.Security.TrustedProxyCIDRs...,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -121,6 +132,7 @@ func runServer() {
 		cfg.Server.Security.GlobalRateBurst,
 		"global",
 		globalHandler,
+		trustedProxyCIDRs,
 	)
 	globalHandler = middleware.RedisRateLimit(
 		cfg.Server.Security.RedisAddr,

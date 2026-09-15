@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -52,14 +53,14 @@ func RequestLogger(next http.Handler) http.Handler {
 
 func logEntry(r *http.Request, status int, duration time.Duration) string {
 	return r.Method + " " +
-		r.URL.RequestURI() + " " +
+		r.URL.Path + " " +
 		r.RemoteAddr + " " +
 		http.StatusText(status) + " " +
-		duration.String()
+		duration.String() + " request_id=" + strconv.Quote(r.Header.Get("X-Request-ID"))
 }
 
 func writeLog(path string, message string) {
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Printf("open log file %s: %v", path, err)
 		return
