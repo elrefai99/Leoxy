@@ -38,7 +38,7 @@ func LimitRequest(limit int, next http.Handler, trustedProxyCIDRs ...[]*net.IPNe
 		counter.count++
 		clients[clientIP] = counter
 		allowed := counter.count <= limit
-		defer mutex.Unlock()
+		mutex.Unlock()
 
 		if !allowed {
 			w.Header().Set("Retry-After", "60")

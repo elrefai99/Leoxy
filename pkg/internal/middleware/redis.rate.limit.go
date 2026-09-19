@@ -50,6 +50,10 @@ func (limiter *RedisLimiter) Allow(key string, limit int) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+		if err = limiter.initialize(connection); err != nil {
+			connection.Close()
+			return false, err
+		}
 	}
 	allowed, err := limiter.increment(connection, key, limit)
 	if err == nil {
@@ -64,20 +68,27 @@ func (limiter *RedisLimiter) Allow(key string, limit int) (bool, error) {
 	return allowed, err
 }
 
+func (limiter *RedisLimiter) initialize(connection net.Conn) error {
+	if err := connection.SetDeadline(time.Now().Add(time.Second)); err != nil {
+		return err
+	}
+	if limiter.password != "" {
+		if _, err := redisCommand(connection, "AUTH", limiter.password); err != nil {
+			return err
+		}
+	}
+	if limiter.database > 0 {
+		if _, err := redisCommand(connection, "SELECT", strconv.Itoa(limiter.database)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (limiter *RedisLimiter) increment(connection net.Conn, key string, limit int) (bool, error) {
 	err := connection.SetDeadline(time.Now().Add(time.Second))
 	if err != nil {
 		return false, err
-	}
-	if limiter.password != "" {
-		if _, err = redisCommand(connection, "AUTH", limiter.password); err != nil {
-			return false, err
-		}
-	}
-	if limiter.database > 0 {
-		if _, err = redisCommand(connection, "SELECT", strconv.Itoa(limiter.database)); err != nil {
-			return false, err
-		}
 	}
 	value, err := redisCommand(connection, "INCR", key)
 	if err != nil {

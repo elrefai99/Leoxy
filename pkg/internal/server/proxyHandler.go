@@ -12,18 +12,20 @@ import (
 	"github.com/elrefai99/Leoxy/pkg/internal/utils"
 )
 
+var proxyTransport = &http.Transport{
+	Proxy:                 http.ProxyFromEnvironment,
+	DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+	ForceAttemptHTTP2:     true,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ResponseHeaderTimeout: 15 * time.Second,
+	IdleConnTimeout:       90 * time.Second,
+	MaxIdleConns:          512,
+	MaxIdleConnsPerHost:   128,
+}
+
 func NewProxy(target *url.URL, forwardIP bool, trustedProxyCIDRs ...[]*net.IPNet) *httputil.ReverseProxy {
 	proxy := httputil.NewSingleHostReverseProxy(target)
-	proxy.Transport = &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-		ForceAttemptHTTP2:     true,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ResponseHeaderTimeout: 15 * time.Second,
-		IdleConnTimeout:       90 * time.Second,
-		MaxIdleConns:          100,
-		MaxIdleConnsPerHost:   10,
-	}
+	proxy.Transport = proxyTransport
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		log.Printf("upstream request failed: %v", err)
 		http.Error(w, "bad gateway", http.StatusBadGateway)
