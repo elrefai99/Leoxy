@@ -1,18 +1,18 @@
-# Leoxy
+# Leoxy (LX-2)
 
-Leoxy is a lightweight HTTP reverse proxy built in Go. It routes incoming requests to configurable upstream servers based on path prefixes, with built-in health-check endpoints and request logging.
+LX-2 is a lightweight HTTP reverse proxy built in Go. It routes incoming requests to configurable upstream servers based on path prefixes, with built-in health-check endpoints and request logging.
 
 ## Deployment architecture
 
-Leoxy is designed to run behind Nginx:
+LX-2 is designed to run behind Nginx:
 
 ```text
-Client -> Nginx -> Leoxy -> Application servers
+Client -> Nginx -> LX-2 -> Application servers
 ```
 
-Nginx is responsible for public HTTPS termination and forwarding requests to Leoxy on a private network. Leoxy applies request-body and rate limits, then routes approved requests to the configured application servers.
+Nginx is responsible for public HTTPS termination and forwarding requests to LX-2 on a private network. LX-2 applies request-body and rate limits, then routes approved requests to the configured application servers.
 
-Do not expose Leoxy directly to the public Internet when Nginx is the TLS terminator. Bind it to a private interface or firewall its port so only Nginx can reach it.
+Do not expose LX-2 directly to the public Internet when Nginx is the TLS terminator. Bind it to a private interface or firewall its port so only Nginx can reach it.
 
 ### Request-body limits
 
@@ -20,9 +20,9 @@ Set `server.security.max_body` for a global maximum request-body size in megabyt
 
 ### Rate limits
 
-Leoxy supports per-IP, per-route, and global rate limits. Configure them under `server.security` for proxy-wide limits and `upstream[].security` for route-specific limits. Rates are requests per minute and burst values define the initial request capacity.
+LX-2 supports per-IP, per-route, and global rate limits. Configure them under `server.security` for proxy-wide limits and `upstream[].security` for route-specific limits. Rates are requests per minute and burst values define the initial request capacity.
 
-When Nginx forwards traffic, ensure Leoxy receives client-IP headers only from that trusted Nginx instance. Do not allow clients to connect directly to Leoxy and submit forwarded-IP headers.
+When Nginx forwards traffic, ensure LX-2 receives client-IP headers only from that trusted Nginx instance. Do not allow clients to connect directly to LX-2 and submit forwarded-IP headers.
 
 ## Features
 
@@ -86,7 +86,7 @@ server:
 
 API keys are accepted in `X-API-Key` or as a bearer token. JWT authentication validates HS256 signatures and requires `exp`; `JWT_ISSUER` and `JWT_AUDIENCE` can enforce issuer and audience. mTLS requires the server to be deployed behind TLS with verified client certificates. Request bodies are rejected before proxying when they exceed `max_body` or the upstream `body` limit.
 
-When `redis_addr` is configured, the global limit is also enforced through Redis so multiple Leoxy instances share a minute window. Redis failures return `503` rather than silently bypassing the limit.
+When `redis_addr` is configured, the global limit is also enforced through Redis so multiple LX-2 instances share a minute window. Redis failures return `503` rather than silently bypassing the limit.
 
 Routes are registered only for upstreams with valid, parseable URLs.
 
