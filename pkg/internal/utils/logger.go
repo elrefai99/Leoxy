@@ -1,12 +1,15 @@
 package utils
 
 import (
+	"encoding/json"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -44,6 +47,8 @@ type requestLogger struct {
 	mutex sync.Mutex
 }
 
+var requestSequence uint64
+
 func RequestLogger(next http.Handler) http.Handler {
 	if err := os.MkdirAll("log", 0755); err != nil {
 		log.Fatal(err)
@@ -56,22 +61,43 @@ func RequestLogger(next http.Handler) http.Handler {
 			return
 		}
 
+		requestID := strings.TrimSpace(r.Header.Get("X-Request-ID"))
+		if requestID == "" {
+			requestID = newRequestID()
+		}
+		r.Header.Set("X-Request-ID", requestID)
+		w.Header().Set("X-Request-ID", requestID)
 		start := time.Now()
 		writer := &statusWriter{ResponseWriter: w}
 
 		next.ServeHTTP(writer, r)
 
-		message := logEntry(r, writer.status, time.Since(start))
-		logger.write(message, writer.status >= http.StatusBadRequest)
+		status := writer.status
+		if status == 0 {
+			status = http.StatusOK
+		}
+		entry := logEntry(r, status, time.Since(start))
+		logger.write(entry, status >= http.StatusBadRequest)
 	})
 }
 
 func logEntry(r *http.Request, status int, duration time.Duration) string {
-	return r.Method + " " +
-		r.URL.Path + " " +
-		r.RemoteAddr + " " +
-		http.StatusText(status) + " " +
-		duration.String() + " request_id=" + strconv.Quote(r.Header.Get("X-Request-ID"))
+	entry := map[string]interface{}{
+		"method":      r.Method,
+		"path":        r.URL.Path,
+		"remote_ip":   remoteIP(r.RemoteAddr),
+		"status":      status,
+		"status_text": http.StatusText(status),
+		"duration_ms": duration.Milliseconds(),
+		"request_id":  r.Header.Get("X-Request-ID"),
+		"error":       status >= http.StatusBadRequest,
+		"message":     r.Method + " " + r.URL.Path,
+	}
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return r.Method + " " + r.URL.Path
+	}
+	return string(data)
 }
 
 func (logger *requestLogger) write(message string, isError bool) {
@@ -92,4 +118,15 @@ func writeLog(path string, message string) {
 	}
 	defer file.Close()
 	log.New(file, "", log.LstdFlags).Println(message)
+}
+
+func newRequestID() string {
+	return strconv.FormatUint(atomic.AddUint64(&requestSequence, 1), 36)
+}
+
+func remoteIP(address string) string {
+	if host, _, err := net.SplitHostPort(address); err == nil {
+		return host
+	}
+	return address
 }

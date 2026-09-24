@@ -13,6 +13,7 @@ type Upstream struct {
 	Path          string   `mapstructure:"path"`
 	IP            bool     `mapstructure:"ip"`
 	ServerURL     string   `mapstructure:"server_url"`
+	Servers       []string `mapstructure:"servers"`
 	Limit_request int      `mapstructure:"limit_request"`
 	Body          int      `mapstructure:"body"`
 	Security      Security `mapstructure:"security"`
@@ -69,6 +70,9 @@ func Load() (*ServerConfig, error) {
 	err = viper.Unmarshal(&cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %s", err)
+	}
+	if value := os.Getenv("PORT"); value != "" {
+		cfg.Server.Port = value
 	}
 	if value := os.Getenv("JWT_SECRET"); value != "" {
 		cfg.Server.Security.JWTSecret = value

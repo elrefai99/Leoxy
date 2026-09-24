@@ -14,7 +14,9 @@ upstream:
     path: /api
     ip: true
     body: 10 # By MB only
-    server_url: "http://localhost:60459"
+    servers:
+      - "http://localhost:60459"
+      - "http://localhost:60460"
     security:
       route_rate_limit: 100
       route_rate_burst: 20

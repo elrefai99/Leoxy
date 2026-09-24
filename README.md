@@ -27,6 +27,7 @@ When Nginx forwards traffic, ensure LX-2 receives client-IP headers only from th
 ## Features
 
 - **Reverse proxy** – forwards requests to multiple backend services using `httputil.ReverseProxy`.
+- **Load balancing** – round-robin routing across multiple servers with connection-failure failover for bodyless or replayable requests.
 - **Path-based routing** – each upstream is mapped to a configurable path prefix; the prefix is stripped before forwarding.
 - **Health checks** – exposes liveness and ping endpoints for monitoring.
 - **Request logging** – logs method, path, remote address, and latency for every request.
@@ -46,7 +47,9 @@ upstream:
   - name: "Backend"
     path: /api
     ip: true
-    server_url: "http://localhost:7000"
+    servers:
+      - "http://localhost:7000"
+      - "http://localhost:7001"
 
   - name: "Frontend"
     path: /
@@ -59,6 +62,7 @@ upstream:
 | `upstream[].name` | Identifier for the upstream. |
 | `upstream[].path` | Route prefix that triggers this upstream (defaults to `/`). |
 | `upstream[].server_url` | Absolute URL of the backend; validated at startup. |
+| `upstream[].servers` | List of backend URLs for round-robin load balancing. Failed connections are retried when the request can be safely replayed. |
 | `upstream[].ip` | Flag to capture and forward the client IP. |
 
 ### Security
@@ -98,6 +102,19 @@ leoxy start      # start in the background (writes .leoxy.pid)
 leoxy stop       # stop the background process
 leoxy version    # print version
 ```
+
+## PM2
+
+Build the binary and start two Leoxy instances on ports 8080 and 8081:
+
+```bash
+go build -o leoxy ./pkg/cmd
+pm2 start ecosystem.config.cjs
+```
+
+PM2 must use `fork` mode because Leoxy is a Go server. Put Nginx or another load balancer in front of ports 8080 and 8081. The `PORT` environment variable overrides `server.port` for each instance.
+
+On Windows, build `leoxy.exe` and change the ecosystem `script` value to `./leoxy.exe`.
 
 ## Endpoints
 

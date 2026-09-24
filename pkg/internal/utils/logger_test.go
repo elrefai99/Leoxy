@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -66,5 +67,36 @@ func TestRequestLoggerSkipsNodeModules(t *testing.T) {
 
 	if _, err := os.Stat("log/request.log"); !os.IsNotExist(err) {
 		t.Fatalf("node_modules request should not be logged")
+	}
+}
+
+func TestRequestLoggerAddsRequestIDAndJSONFields(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+	}))
+
+	req := httptest.NewRequest(http.MethodPut, "/items?id=secret", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+
+	requestID := response.Header().Get("X-Request-ID")
+	if requestID == "" {
+		t.Fatal("request ID was not returned")
+	}
+	data, err := os.ReadFile("log/request.log")
+	if err != nil {
+		t.Fatalf("read request log: %v", err)
+	}
+	var entry map[string]interface{}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(string(data))[20:]), &entry); err != nil {
+		t.Fatalf("parse request log: %v", err)
+	}
+	if entry["path"] != "/items" || entry["status"] != float64(http.StatusCreated) {
+		t.Fatalf("unexpected log entry: %v", entry)
+	}
+	if entry["request_id"] != requestID {
+		t.Fatalf("request ID = %v, want %s", entry["request_id"], requestID)
 	}
 }
