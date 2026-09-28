@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const pidFile = ".leoxy.pid"
+const pidFile = "leoxy/keys/.leoxy.pid"
 
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -21,12 +21,13 @@ var startCmd = &cobra.Command{
 		}
 
 		process := exec.Command(executable, "run")
-
-		logFile, err := os.OpenFile(
-			".leoxy.log",
-			os.O_CREATE|os.O_WRONLY|os.O_APPEND,
-			0644,
-		)
+		if err := os.MkdirAll("leoxy/log", 0755); err != nil {
+			return err
+		}
+		if err := os.MkdirAll("leoxy/keys", 0755); err != nil {
+			return err
+		}
+		logFile, err := os.OpenFile("leoxy/log/.leoxy.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return err
 		}
@@ -39,11 +40,7 @@ var startCmd = &cobra.Command{
 			return err
 		}
 
-		err = os.WriteFile(
-			pidFile,
-			[]byte(strconv.Itoa(process.Process.Pid)),
-			0644,
-		)
+		err = os.WriteFile(pidFile, []byte(strconv.Itoa(process.Process.Pid)), 0644)
 		if err != nil {
 			_ = process.Process.Kill()
 			return err
