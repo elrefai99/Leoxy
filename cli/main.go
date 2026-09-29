@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	serverapp "github.com/elrefai99/Leoxy/pkg/server"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,7 @@ var rootCmd = &cobra.Command{
 	Example: "  leoxy\n  leoxy start\n  leoxy stop\n  leoxy version",
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
-		runServer()
+		serverapp.Run()
 	},
 }
 
@@ -35,7 +36,7 @@ var runCmd = &cobra.Command{
 	Short:  "Run the server",
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		runServer()
+		serverapp.Run()
 	},
 }
 

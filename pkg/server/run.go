@@ -1,4 +1,4 @@
-package main
+package serverapp
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 
 var once sync.Once
 
-func runServer() {
+func Run() {
 	once.Do(func() {
 		if err := file.CreateConfig(); err != nil {
 			log.Fatal(err)

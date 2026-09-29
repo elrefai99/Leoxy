@@ -96,19 +96,14 @@ Routes are registered only for upstreams with valid, parseable URLs.
 
 ## CLI usage
 
-```bash
-leoxy run        # start the server inline
-leoxy start      # start in the background (writes .leoxy.pid)
-leoxy stop       # stop the background process
-leoxy version    # print version
-```
+See the [CLI guide](docs/cli.md) for build instructions, command usage, help flags, and runtime file locations.
 
 ## PM2
 
 Build the binary and start two Leoxy instances on ports 8080 and 8081:
 
 ```bash
-go build -o leoxy ./pkg/cmd
+go build -o leoxy ./cli
 pm2 start ecosystem.config.cjs
 ```
 
