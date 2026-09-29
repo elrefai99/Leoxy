@@ -1,26 +1,42 @@
+# Leoxy listens on this port. PORT can override it through the environment.
 server:
   port: "8080"
+
+# Global security and request limits for all routes.
   security:
+    # Requests allowed per second and the burst capacity per client.
     rate_limit: 100
     rate_limit_burst: 20
+    # Global request rate and burst capacity across clients.
     global_rate_limit: 1000
     global_rate_burst: 100
+    # Maximum request body size in MB; 0 disables this limit.
     max_body: 10
+    # HTTP methods accepted by the proxy.
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+    # Only trust forwarded client IP headers from these proxy CIDRs.
     trusted_proxy_cidrs: []
 
+# Each upstream maps a request path to one or more backend servers.
 upstream:
   - name: "Backend"
+    # Requests under /api are forwarded to one of these servers.
     path: /api
+    # Forward the client IP to the selected backend.
     ip: true
-    body: 10 # By MB only
+    # Maximum request body size in MB for this upstream.
+    body: 10
+    # Multiple servers enable load balancing.
     servers:
       - "http://localhost:60459"
       - "http://localhost:60460"
     security:
+      # Per-route request rate and burst capacity.
       route_rate_limit: 100
       route_rate_burst: 20
 
   - name: "Frontend"
+    # The root path sends unmatched requests to this backend.
     path: /
+    # Use server_url for a single backend; use servers for multiple backends.
     server_url: "http://localhost:3000"

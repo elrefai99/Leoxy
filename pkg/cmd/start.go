@@ -9,25 +9,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const pidFile = "leoxy/keys/.leoxy.pid"
+const (
+	pidFile = "leoxy/keys/leoxy.pid"
+	pidLogs = "leoxy/log"
+	pidKeys = "leoxy/keys"
+)
 
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the server in the background",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := os.MkdirAll(pidKeys, 0755); err != nil {
+			return err
+		}
+		if err := os.MkdirAll(pidLogs, 0755); err != nil {
+			return err
+		}
+
 		executable, err := os.Executable()
 		if err != nil {
 			return err
 		}
 
 		process := exec.Command(executable, "run")
-		if err := os.MkdirAll("leoxy/log", 0755); err != nil {
-			return err
-		}
-		if err := os.MkdirAll("leoxy/keys", 0755); err != nil {
-			return err
-		}
-		logFile, err := os.OpenFile("leoxy/log/.leoxy.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+
+		logFile, err := os.OpenFile("leoxy/log/leoxy.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return err
 		}

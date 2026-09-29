@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "code-reviewer": {
+      "source": "elrefai99/use",
+      "sourceType": "github",
+      "skillPath": "skills/code-reviewer/SKILL.md",
+      "computedHash": "cffe2d00d2828a7eab550e4699886fb6de7d68a0004d7f2f958ba42a13aeac9e"
+    },
+    "multi-agents": {
+      "source": "elrefai99/use",
+      "sourceType": "github",
+      "skillPath": "skills/multi-agents/SKILL.md",
+      "computedHash": "7b563e14529fd929f3489346dc859f9ba7d978ba54d4b2a43c59acb3c4f6beb0"
+    },
+    "multi-tenant": {
+      "source": "elrefai99/use",
+      "sourceType": "github",
+      "skillPath": "skills/multi-tenant/SKILL.md",
+      "computedHash": "5e66c24337a9eb38fb8f40d84ac62edd831b6f728a6d3b3ed33f0f9d93f6b866"
+    }
+  }
+}

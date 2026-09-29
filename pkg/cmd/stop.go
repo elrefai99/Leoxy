@@ -12,8 +12,10 @@ import (
 )
 
 var stopCmd = &cobra.Command{
-	Use:   "stop",
-	Short: "Stop the server",
+	Use:     "stop",
+	Short:   "Stop the server",
+	Long:    "Stop the background Leoxy process started with the start command.",
+	Example: "  leoxy stop",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		data, err := os.ReadFile(pidFile)
 		if err != nil {
