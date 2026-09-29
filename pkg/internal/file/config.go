@@ -2,14 +2,22 @@ package file
 
 import "os"
 
-const defaultConfig = `server:
+const defaultConfig = `
+# Leoxy listens on this port. PORT can override it through the environment.
+server:
   port: "8080"
+
+# Global security and request limits for all routes.
   security:
+    # HTTP methods accepted by the proxy.
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
 
+# Each upstream maps a request path to one or more backend servers.
 upstream:
   - name: "server_runner"
+    # Requests under /api are forwarded to one of these servers.
     path: /
+    # Use server_url for a single backend; use servers for multiple backends.
     server_url: "http://localhost:3000"
 `
 
