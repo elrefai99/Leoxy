@@ -24,3 +24,7 @@ roadmap.md
 .env.dev
 tmp
 *.exe
+.claude
+.cursor
+.opencode
+
