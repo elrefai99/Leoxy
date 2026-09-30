@@ -17,8 +17,11 @@ server:
     # Only trust forwarded client IP headers from these proxy CIDRs.
     trusted_proxy_cidrs: []
 
-# Each upstream maps a request path to one or more backend servers.
+# HTTP upstreams share server.port. HTTP/1.1, upstream HTTP/2, WebSocket
+# upgrades, and GraphQL over HTTP use these path-based routes. HTTP/3 is not
+# currently supported.
 upstream:
+  # HTTP load balancing; path is removed before forwarding.
   - name: "Backend"
     # Requests under /api are forwarded to one of these servers.
     path: /api
@@ -40,3 +43,15 @@ upstream:
     path: /
     # Use server_url for a single backend; use servers for multiple backends.
     server_url: "http://localhost:3000"
+
+  # Raw TCP listener. This traffic does not use HTTP security middleware.
+  - name: "TCPService"
+    protocol: tcp
+    listen: ":7001"
+    server_url: "127.0.0.1:7000"
+
+  # Raw UDP listener. Each client address gets an upstream UDP session.
+  - name: "UDPService"
+    protocol: udp
+    listen: ":7002"
+    server_url: "127.0.0.1:7003"

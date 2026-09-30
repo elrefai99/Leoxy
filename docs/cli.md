@@ -58,7 +58,10 @@ Print the executable version:
 
 ### Help
 
-Cobra provides help for the root command and each visible subcommand:
+The root help (`-h` or `--help`) includes the config file location, supported
+protocols, security settings, environment overrides, HTTP endpoints, build
+instructions, and foreground/background commands. Cobra also provides help for
+each visible subcommand:
 
 ```sh
 ./leoxy --help

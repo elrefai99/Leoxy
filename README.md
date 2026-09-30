@@ -1,6 +1,6 @@
 # Leoxy (LX-2)
 
-LX-2 is a lightweight HTTP reverse proxy built in Go. It routes incoming requests to configurable upstream servers based on path prefixes, with built-in health-check endpoints and request logging.
+LX-2 is a lightweight reverse proxy built in Go. It routes HTTP requests to configurable upstream servers based on path prefixes, and can also forward raw TCP and UDP traffic through dedicated listeners.
 
 ## Deployment architecture
 
@@ -35,6 +35,8 @@ When Nginx forwards traffic, ensure LX-2 receives client-IP headers only from th
 - **YAML configuration** – upstreams and server settings are defined in `leoxy/config.yaml` via `viper`.
 - **Timeouts** – explicit read/write/idle timeouts and max header size for safety.
 
+Leoxy supports HTTP/1.1 and upstream HTTP/2, WebSocket upgrades, and GraphQL over HTTP. TCP and UDP use separately configured raw listeners. HTTP/3 is not currently supported.
+
 ## Configuration
 
 Create `leoxy/config.yaml`:
@@ -44,6 +46,16 @@ server:
   port: "8081"
 
 upstream:
+  - name: "GameTCP"
+    protocol: tcp
+    listen: ":7001"
+    server_url: "127.0.0.1:7000"
+
+  - name: "MetricsUDP"
+    protocol: udp
+    listen: ":7002"
+    server_url: "127.0.0.1:7003"
+
   - name: "Backend"
     path: /api
     ip: true
@@ -64,6 +76,8 @@ upstream:
 | `upstream[].server_url` | Absolute URL of the backend; validated at startup. |
 | `upstream[].servers` | List of backend URLs for round-robin load balancing. Failed connections are retried when the request can be safely replayed. |
 | `upstream[].ip` | Flag to capture and forward the client IP. |
+| `upstream[].protocol` | `http` (default), `http2`, `graphql`, `websocket`, `tcp`, or `udp`. HTTP application protocols use the HTTP listener. TCP and UDP use raw listeners. |
+| `upstream[].listen` | Local bind address for TCP or UDP upstreams, such as `:7001`. |
 
 ### Security
 

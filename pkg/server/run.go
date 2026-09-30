@@ -3,6 +3,7 @@ package serverapp
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -48,7 +49,59 @@ func Run() {
 	metrics := utils.NewMetrics()
 	mux.Handle("/metrics", http.HandlerFunc(metrics.Handler))
 
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(shutdown)
+	var streamListeners []net.Listener
+	var udpListeners []*net.UDPConn
+	done := make(chan struct{})
 	for _, resource := range cfg.Upstream {
+		protocol := strings.ToLower(strings.TrimSpace(resource.Protocol))
+		if protocol == "tcp" || protocol == "udp" {
+			listenAddr := strings.TrimSpace(resource.Listen)
+			targetAddr := strings.TrimSpace(resource.ServerURL)
+			if listenAddr == "" || targetAddr == "" {
+				log.Printf("%s upstream %q requires listen and server_url", protocol, resource.Name)
+				continue
+			}
+			if protocol == "tcp" {
+				listener, err := net.Listen("tcp", listenAddr)
+				if err != nil {
+					log.Printf("TCP listener for %q failed: %v", resource.Name, err)
+					continue
+				}
+				streamListeners = append(streamListeners, listener)
+				go func(name, target string, listener net.Listener) {
+					log.Printf("TCP proxy %q listening on %s -> %s", name, listener.Addr(), target)
+					if err := server.RunTCPProxy(listener, target, done); err != nil {
+						log.Printf("TCP proxy %q stopped: %v", name, err)
+					}
+				}(resource.Name, targetAddr, listener)
+			} else {
+				addr, err := net.ResolveUDPAddr("udp", listenAddr)
+				if err != nil {
+					log.Printf("invalid UDP listen address for %q: %v", resource.Name, err)
+					continue
+				}
+				conn, err := net.ListenUDP("udp", addr)
+				if err != nil {
+					log.Printf("UDP listener for %q failed: %v", resource.Name, err)
+					continue
+				}
+				udpListeners = append(udpListeners, conn)
+				go func(name, target string, conn *net.UDPConn) {
+					log.Printf("UDP proxy %q listening on %s -> %s", name, conn.LocalAddr(), target)
+					if err := server.RunUDPProxy(conn, target, done); err != nil {
+						log.Printf("UDP proxy %q stopped: %v", name, err)
+					}
+				}(resource.Name, targetAddr, conn)
+			}
+			continue
+		}
+		if protocol != "" && protocol != "http" && protocol != "https" && protocol != "http2" && protocol != "graphql" && protocol != "websocket" {
+			log.Printf("unsupported protocol %q for upstream %q", protocol, resource.Name)
+			continue
+		}
 		serverURLs := resource.Servers
 		if len(serverURLs) == 0 && resource.ServerURL != "" {
 			serverURLs = []string{resource.ServerURL}
@@ -191,20 +244,23 @@ func Run() {
 		serverErrors <- httpServer.ListenAndServe()
 	}()
 
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(shutdown)
-
 	select {
 	case err := <-serverErrors:
 		if err != nil && err != http.ErrServerClosed {
 			log.Printf("server stopped: %v", err)
 		}
 	case <-shutdown:
+		close(done)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(ctx); err != nil {
 			log.Printf("graceful shutdown failed: %v", err)
+		}
+		for _, listener := range streamListeners {
+			_ = listener.Close()
+		}
+		for _, conn := range udpListeners {
+			_ = conn.Close()
 		}
 	}
 }

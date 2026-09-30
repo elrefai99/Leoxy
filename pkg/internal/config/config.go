@@ -10,6 +10,8 @@ import (
 
 type Upstream struct {
 	Name          string   `mapstructure:"name"`
+	Protocol      string   `mapstructure:"protocol"`
+	Listen        string   `mapstructure:"listen"`
 	Path          string   `mapstructure:"path"`
 	IP            bool     `mapstructure:"ip"`
 	ServerURL     string   `mapstructure:"server_url"`
