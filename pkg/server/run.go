@@ -36,15 +36,17 @@ func Run() {
 	if err != nil {
 		log.Fatalf("invalid trusted proxy CIDR: %v", err)
 	}
-	mux := http.NewServeMux()
+
 	// Proxy routers
+	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", server.Ping)
 	mux.HandleFunc("/health/live", server.HealthProxy)
-	metrics := utils.NewMetrics()
-	mux.Handle("/metrics", http.HandlerFunc(metrics.Handler))
 	mux.HandleFunc("/leoxy", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/index.html")
 	})
+
+	metrics := utils.NewMetrics()
+	mux.Handle("/metrics", http.HandlerFunc(metrics.Handler))
 
 	for _, resource := range cfg.Upstream {
 		serverURLs := resource.Servers

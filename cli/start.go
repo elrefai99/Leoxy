@@ -59,7 +59,7 @@ var startCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Leoxy started with PID %d\n", process.Process.Pid)
+		fmt.Println("Leoxy started proxy")
 		return nil
 	},
 }
