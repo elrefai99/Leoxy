@@ -1,5 +1,5 @@
-build: 
-	go build -o dist/leoxy.exe ./app/cli
+build:
+	go build -o leoxy.exe ./app/cli
 
 run:
-	./dist/leoxy.exe
+	./leoxy.exe

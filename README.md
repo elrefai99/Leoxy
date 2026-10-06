@@ -117,7 +117,7 @@ See the [CLI guide](docs/cli.md) for build instructions, command usage, help fla
 Build the binary and start two Leoxy instances on ports 8080 and 8081:
 
 ```bash
-go build -o leoxy ./cli
+go build -o leoxy ./app/cli
 pm2 start ecosystem.config.cjs
 ```
 
@@ -142,6 +142,14 @@ GET /health/live
 ```
 
 Returns `{"status":"ok"}`.
+
+### Readiness
+
+```http
+GET /health/ready
+```
+
+Returns `{"status":"ok"}` when at least one server in every configured HTTP upstream group responds without a server error. Returns `503` when any group has no available server. TCP and UDP upstreams are not included.
 
 ### Proxy
 

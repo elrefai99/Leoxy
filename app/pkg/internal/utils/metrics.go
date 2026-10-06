@@ -33,7 +33,11 @@ func (metrics *Metrics) Middleware(next http.Handler) http.Handler {
 			status = http.StatusOK
 		}
 		metrics.mutex.Lock()
-		metrics.requests[r.Method+" "+r.URL.Path]++
+		route := r.Pattern
+		if route == "" {
+			route = "unmatched"
+		}
+		metrics.requests[r.Method+" "+route]++
 		metrics.status[status]++
 		metrics.requestTime += time.Since(started)
 		metrics.mutex.Unlock()

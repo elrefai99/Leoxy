@@ -7,13 +7,13 @@ The Leoxy command line interface starts the reverse proxy, manages it as a backg
 From the repository root, build the executable:
 
 ```sh
-go build -o leoxy ./cli
+go build -o leoxy ./app/cli
 ```
 
 On Windows, build `leoxy.exe`:
 
 ```powershell
-go build -o leoxy.exe ./cli
+go build -o leoxy.exe ./app/cli
 ```
 
 Run the commands from the directory containing the `leoxy/` configuration directory. The configuration is read from `leoxy/config.yaml` relative to the current working directory. If it does not exist, Leoxy creates a default configuration.

@@ -40,3 +40,20 @@ func TestBodyAllowsRequestWithinLimit(t *testing.T) {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
 	}
 }
+
+func TestBodyRejectsOversizedUnknownLengthBeforeCallingNext(t *testing.T) {
+	called := false
+	handler := Body(1, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		called = true
+	}))
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(strings.Repeat("a", 1024*1024+1)))
+	req.ContentLength = -1
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	if response.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusRequestEntityTooLarge)
+	}
+	if called {
+		t.Fatal("next handler should not be called")
+	}
+}

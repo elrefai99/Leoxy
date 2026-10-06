@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "v3.6.7"
+const version = "v3.7.10"
 
 var rootCmd = &cobra.Command{
 	Use:   "leoxy",
@@ -39,6 +39,7 @@ REDIS_PASSWORD environment variables. PORT and RATE_LIMIT also override config.
 HTTP endpoints:
   GET /ping       Returns PONG.
   GET /health/live Returns the liveness status.
+  GET /health/ready Checks configured HTTP upstreams.
   GET /metrics    Exposes request metrics.
   GET /leoxy      Serves the project page.
 
@@ -48,8 +49,8 @@ Run from the directory containing leoxy/config.yaml:
   leoxy stop        Stop the background process.
   leoxy version     Print the executable version.
 
-Build with: go build -o leoxy ./cli
-On Windows: go build -o leoxy.exe ./cli`,
+Build with: go build -o leoxy ./app/cli
+On Windows: go build -o leoxy.exe ./app/cli`,
 	Example: "  leoxy\n  leoxy start\n  leoxy stop\n  leoxy version",
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {

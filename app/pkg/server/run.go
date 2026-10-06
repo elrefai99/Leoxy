@@ -54,6 +54,7 @@ func Run() {
 	defer signal.Stop(shutdown)
 	var streamListeners []net.Listener
 	var udpListeners []*net.UDPConn
+	var healthTargets [][]*url.URL
 	done := make(chan struct{})
 	for _, resource := range cfg.Upstream {
 		protocol := strings.ToLower(strings.TrimSpace(resource.Protocol))
@@ -108,8 +109,8 @@ func Run() {
 		}
 		targets := make([]*url.URL, 0, len(serverURLs))
 		for _, serverURL := range serverURLs {
-			target, err := url.Parse(serverURL)
-			if err != nil || target.Scheme == "" || target.Host == "" {
+			target, err := server.ParseHTTPUpstreamURL(serverURL)
+			if err != nil {
 				log.Printf("invalid upstream %q: %v", serverURL, err)
 				continue
 			}
@@ -117,8 +118,10 @@ func Run() {
 		}
 		if len(targets) == 0 {
 			log.Printf("upstream %q has no valid servers", resource.Name)
+			healthTargets = append(healthTargets, nil)
 			continue
 		}
+		healthTargets = append(healthTargets, targets)
 
 		prefix := strings.TrimSpace(resource.Path)
 		if prefix == "" {
@@ -133,14 +136,23 @@ func Run() {
 				prefix = "/"
 			}
 		}
+		security := resource.Security
+		trustedProxyCIDRValues := cfg.Server.Security.TrustedProxyCIDRs
+		trustedProxyCIDRsForRoute := trustedProxyCIDRs
+		if len(security.TrustedProxyCIDRs) > 0 {
+			trustedProxyCIDRValues = security.TrustedProxyCIDRs
+			trustedProxyCIDRsForRoute, err = utils.ParseCIDRs(trustedProxyCIDRValues)
+			if err != nil {
+				log.Fatalf("invalid trusted proxy CIDR for %q: %v", resource.Name, err)
+			}
+		}
 
 		var handler http.Handler
 		if len(targets) == 1 {
-			handler = server.ProxyHandler(prefix, server.NewProxy(targets[0], resource.IP, trustedProxyCIDRs))
+			handler = server.ProxyHandler(prefix, server.NewProxy(targets[0], resource.IP, trustedProxyCIDRsForRoute))
 		} else {
-			handler = server.LoadBalancedProxyHandler(prefix, targets, resource.IP, trustedProxyCIDRs)
+			handler = server.LoadBalancedProxyHandler(prefix, targets, resource.IP, trustedProxyCIDRsForRoute)
 		}
-		security := resource.Security
 		if security.MaxBody <= 0 {
 			security.MaxBody = resource.Body
 		}
@@ -155,7 +167,7 @@ func Run() {
 			security.JWTAudience,
 			security.RequireMTLS,
 			handler,
-			security.TrustedProxyCIDRs...,
+			trustedProxyCIDRValues...,
 		)
 		if err != nil {
 			log.Fatalf("invalid security configuration for %q: %v", resource.Name, err)
@@ -170,7 +182,7 @@ func Run() {
 			0,
 			prefix,
 			handler,
-			trustedProxyCIDRs,
+			trustedProxyCIDRsForRoute,
 		)
 		if security.MaxBody > 0 {
 			handler = middleware.Body(security.MaxBody, handler)
@@ -183,6 +195,7 @@ func Run() {
 			mux.Handle(prefix+"/", handler)
 		}
 	}
+	mux.HandleFunc("/health/ready", server.Readiness(healthTargets))
 
 	globalHandler, err := middleware.AccessControlWithJWT(
 		cfg.Server.Security.AllowCIDRs,
@@ -228,7 +241,6 @@ func Run() {
 		Handler:           utils.RequestLogger(metrics.Middleware(globalHandler)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    1 << 20,
 	}

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -55,6 +56,18 @@ func NewProxy(target *url.URL, forwardIP bool, trustedProxyCIDRs ...[]*net.IPNet
 		}
 	}
 	return proxy
+}
+
+func ParseHTTPUpstreamURL(value string) (*url.URL, error) {
+	target, err := url.Parse(strings.TrimSpace(value))
+	if err != nil {
+		return nil, err
+	}
+	target.Scheme = strings.ToLower(target.Scheme)
+	if (target.Scheme != "http" && target.Scheme != "https") || target.Host == "" {
+		return nil, fmt.Errorf("upstream URL must use http or https and include a host")
+	}
+	return target, nil
 }
 
 func requestScheme(r *http.Request) string {
@@ -133,7 +146,7 @@ type loadBalancedTransport struct {
 
 func (t loadBalancedTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	resp, err := t.base.RoundTrip(r)
-	if err == nil || len(t.targets) < 2 || (r.Body != nil && r.Body != http.NoBody && r.GetBody == nil) {
+	if err == nil || len(t.targets) < 2 || !retryableMethod(r.Method) || (r.Body != nil && r.Body != http.NoBody && r.GetBody == nil) {
 		return resp, err
 	}
 
@@ -157,4 +170,13 @@ func (t loadBalancedTransport) RoundTrip(r *http.Request) (*http.Response, error
 		}
 	}
 	return nil, err
+}
+
+func retryableMethod(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace:
+		return true
+	default:
+		return false
+	}
 }
