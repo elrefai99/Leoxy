@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/elrefai99/Leoxy/pkg/internal/utils"
+	"github.com/elrefai99/Leoxy/app/pkg/internal/utils"
 )
 
 var proxyTransport = &http.Transport{

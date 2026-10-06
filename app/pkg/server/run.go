@@ -13,11 +13,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/elrefai99/Leoxy/pkg/internal/config"
-	"github.com/elrefai99/Leoxy/pkg/internal/file"
-	"github.com/elrefai99/Leoxy/pkg/internal/middleware"
-	"github.com/elrefai99/Leoxy/pkg/internal/server"
-	"github.com/elrefai99/Leoxy/pkg/internal/utils"
+	"github.com/elrefai99/Leoxy/app/pkg/internal/config"
+	"github.com/elrefai99/Leoxy/app/pkg/internal/file"
+	"github.com/elrefai99/Leoxy/app/pkg/internal/middleware"
+	"github.com/elrefai99/Leoxy/app/pkg/internal/server"
+	"github.com/elrefai99/Leoxy/app/pkg/internal/utils"
 )
 
 var once sync.Once

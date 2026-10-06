@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	serverapp "github.com/elrefai99/Leoxy/pkg/server"
+	serverapp "github.com/elrefai99/Leoxy/app/pkg/server"
 	"github.com/spf13/cobra"
 )
 
-const version = "v3.5.7"
+const version = "v3.6.7"
 
 var rootCmd = &cobra.Command{
 	Use:   "leoxy",

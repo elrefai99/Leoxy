@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/elrefai99/Leoxy/pkg/internal/utils"
+	"github.com/elrefai99/Leoxy/app/pkg/internal/utils"
 	"github.com/golang-jwt/jwt/v5"
 )
 
