@@ -1,0 +1,10 @@
+.PHONY: build-linux build-windows build-all
+
+build-linux:
+	sh script/build-lx-2/build.sh linux
+
+build-windows:
+	sh script/build-lx-2/build.sh windows
+
+build-all:
+	sh script/build-lx-2/build.sh all

@@ -1,15 +1,19 @@
 import { execFile } from "node:child_process"
-import { appendFile, mkdir, stat } from "node:fs/promises"
+import { appendFile, mkdir, readFile, rename } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
 
 const execFileAsync = promisify(execFile)
 
+const here = path.dirname(fileURLToPath(import.meta.url))
+const header = "Timestamp,PID,ProcessName,WorkingSetMB,PrivateMemoryMB,CpuPercent,CpuCores"
+
 const config = {
      processName: process.argv[2] ?? "leoxy",
      intervalMs: 1000,
-     output: path.resolve("../../docs/baseline/ramMS.csv")
+     output: path.resolve(process.argv[3] ?? path.join(here, "./docs/ramMS.csv"))
 }
 const logicalCores = os.cpus().length
 const previous = new Map()
@@ -68,14 +72,34 @@ function cpuUsage(item) {
 }
 
 async function writeHeader() {
-     const size = await stat(config.output).then((s) => s.size).catch(() => 0)
-     if (size > 0) return
+     const current = await readFile(config.output, "utf-8").catch(() => "")
+     if (current.startsWith(`${header}\n`)) return
 
-     await appendFile(
-          config.output,
-          "Timestamp,PID,ProcessName,WorkingSetMB,PrivateMemoryMB,CpuPercent,CpuCores\n",
-          "utf-8"
-     )
+     if (current.length > 0) {
+          await rename(config.output, config.output.replace(/\.csv$/, `.${Date.now()}.csv`))
+     }
+
+     await appendFile(config.output, `${header}\n`, "utf-8")
+}
+
+function toRow(item, timestamp) {
+     const workingMB = (Number(item.WorkingSet64) / 1024 ** 2).toFixed(2)
+     const privateMemoryMB = (Number(item.PrivateMemorySize64) / 1024 ** 2).toFixed(2)
+     const cpu = cpuUsage(item)
+     const cpuPercent = cpu ? cpu.percent.toFixed(2) : ""
+     const cpuCores = cpu ? cpu.cores.toFixed(2) : ""
+
+     console.log(`Time: ${timestamp}, PID:${item.Id}, RAM:${workingMB} MB, Private:${privateMemoryMB} MB, CPU:${cpuPercent || "n/a"}% (${cpuCores || "n/a"} cores)`)
+
+     return [
+          timestamp,
+          item.Id,
+          item.ProcessName,
+          workingMB,
+          privateMemoryMB,
+          cpuPercent,
+          cpuCores
+     ].join(",")
 }
 
 async function main() {
@@ -88,41 +112,27 @@ async function main() {
      console.log(`Press Ctrl+C to stop`)
 
      while (!stopped) {
+          const timestamp = new Date().toISOString()
+          let processes = []
+
           try {
-               const processes = await getProcess()
-               const timestamp = new Date().toISOString()
-
-               for (const item of processes) {
-                    const workingMB = (
-                         Number(item.WorkingSet64) / 1024 ** 2
-                    ).toFixed(2)
-                    const privateMemoryMB = (
-                         Number(item.PrivateMemorySize64) / 1024 ** 2
-                    ).toFixed(2)
-                    const cpu = cpuUsage(item)
-                    const cpuPercent = cpu ? cpu.percent.toFixed(2) : ""
-                    const cpuCores = cpu ? cpu.cores.toFixed(2) : ""
-
-                    const row = [
-                         timestamp,
-                         item.Id,
-                         item.ProcessName,
-                         workingMB,
-                         privateMemoryMB,
-                         cpuPercent,
-                         cpuCores
-                    ].join(",")
-
-                    await appendFile(config.output, `${row}\n`, "utf-8")
-                    console.log(`Time: ${timestamp}, PID:${item.Id}, RAM:${workingMB} MB, Private:${privateMemoryMB} MB, CPU:${cpuPercent || "n/a"}% (${cpuCores || "n/a"} cores)`)
-               }
-
-               if (processes.length === 0) {
-                    console.log(`${timestamp} Process not found ${config.processName}`)
-               }
+               processes = await getProcess()
           }
           catch (err) {
                console.error("Failed to collect RAM/CPU metrics: ", err.message)
+          }
+
+          if (processes.length === 0) {
+               console.log(`${timestamp} Process not found ${config.processName}`)
+          } else {
+               const rows = processes.map((item) => toRow(item, timestamp))
+
+               try {
+                    await appendFile(config.output, `${rows.join("\n")}\n`, "utf-8")
+               }
+               catch (err) {
+                    console.error(`Failed to write ${config.output}: `, err.message)
+               }
           }
 
           await new Promise((resolve) => setTimeout(resolve, config.intervalMs))

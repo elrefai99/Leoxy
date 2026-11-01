@@ -1,0 +1,18 @@
+TEST_DIR := script/test
+
+.PHONY: build test run test-e2e test-endpoints test-load test-ratelimit test-auth
+
+test-e2e:
+	bash $(TEST_DIR)/run-all.sh
+
+test-endpoints:
+	bash $(TEST_DIR)/endpoints.sh
+
+test-load:
+	bash $(TEST_DIR)/load.sh
+
+test-ratelimit:
+	bash $(TEST_DIR)/ratelimit.sh
+
+test-auth:
+	bash $(TEST_DIR)/auth.sh
