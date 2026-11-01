@@ -8,10 +8,10 @@ LX-2 routes HTTP requests to configurable upstream servers based on path prefixe
 
 ## Deployment architecture
 
-LX-2 is designed to run behind Nginx for TLS termination. Do not expose it directly to the public internet.
+LX-2 routes client requests to configured application servers.
 
 ```text
-Client -> Nginx -> LX-2 -> Application servers
+Client -> Leoxy -> Application servers
 ```
 
 ## Quick Start
