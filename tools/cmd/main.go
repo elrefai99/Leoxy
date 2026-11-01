@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/elrefai99/Leoxy/tools/fs"
+	"github.com/elrefai99/Leoxy/tools/internal/fs"
 )
 
 var (

@@ -65,6 +65,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&dataDir, "data-dir", "", "Directory for logs and runtime state")
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(restartCmd)
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(runCmd)
 }
