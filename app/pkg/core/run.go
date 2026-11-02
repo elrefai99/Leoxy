@@ -116,43 +116,23 @@ func Run() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	protected = securitymiddleware.RedisRateLimitWithFailOpen(
-		sec.RedisAddr,
-		sec.RedisPassword,
-		sec.RedisDB,
-		sec.GlobalRateLimit,
-		"leoxy:global",
-		sec.RedisFailOpen,
-		protected,
-	)
-	protected = securitymiddleware.RateLimit(
-		sec.RateLimit,
-		sec.RateLimitBurst,
-		0,
-		0,
-		sec.GlobalRateLimit,
-		sec.GlobalRateBurst,
-		"global",
-		protected,
-		trustedProxyCIDRs,
-	)
-
-	root := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
-			mux.ServeHTTP(w, r)
-			return
-		}
-		protected.ServeHTTP(w, r)
-	})
+	root := newHTTPRoot(mux, protected, sec)
 
 	tlsConfig, err := buildTLS(sec)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	requestLogger := common.RequestLoggerTrusted(metrics.Middleware(root), trustedProxyCIDRs)
+	defer func() {
+		if err := common.CloseRequestLogger(requestLogger); err != nil {
+			log.Printf("close request logger: %v", err)
+		}
+	}()
+
 	httpServer := &http.Server{
 		Addr:              listenAddress(cfg.Server.Host, cfg.Server.Port),
-		Handler:           common.RequestLoggerTrusted(metrics.Middleware(root), trustedProxyCIDRs),
+		Handler:           requestLogger,
 		TLSConfig:         tlsConfig,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
@@ -185,6 +165,26 @@ func Run() {
 		}
 	}
 	streams.Wait()
+}
+
+func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
+	root := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		protected.ServeHTTP(w, r)
+	})
+	return securitymiddleware.RedisTokenBucketRateLimit(
+		security.RedisAddr,
+		security.RedisPassword,
+		security.RedisDB,
+		security.GlobalRateLimit,
+		security.GlobalRateBurst,
+		"leoxy:global",
+		security.RedisFailOpen,
+		root,
+	)
 }
 
 func listenAddress(host, port string) string {
@@ -314,9 +314,13 @@ func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstre
 	if err != nil {
 		log.Fatalf("invalid security configuration for %q: %v", resource.Name, err)
 	}
+	rateLimit, rateLimitBurst := security.RateLimit, security.RateLimitBurst
+	if prefix != "/" && rateLimit <= 0 {
+		rateLimit, rateLimitBurst = global.RateLimit, global.RateLimitBurst
+	}
 	handler = securitymiddleware.RateLimit(
-		security.RateLimit,
-		security.RateLimitBurst,
+		rateLimit,
+		rateLimitBurst,
 		security.RouteRateLimit,
 		security.RouteRateBurst,
 		0,

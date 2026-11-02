@@ -56,6 +56,9 @@ LX-2 reads configuration from `leoxy/config.yaml`. On first start, a default con
 ```yaml
 server:
   port: "4444"
+  security:
+    global_rate_limit: 10000
+    global_rate_burst: 1000
 
 upstream:
   - name: "Backend"
@@ -63,11 +66,23 @@ upstream:
     servers:
       - "http://localhost:7000"
       - "http://localhost:7001"
+    security:
+      rate_limit: 1000
+      rate_limit_burst: 100
+      route_rate_limit: 1000
+      route_rate_burst: 100
 
   - name: "Frontend"
     path: /
     server_url: "http://localhost:3000"
+    security:
+      rate_limit: 1000
+      rate_limit_burst: 500
 ```
+
+`global_rate_limit` and `global_rate_burst` define one shared HTTP limit. An upstream's `security.rate_limit` and `rate_limit_burst` define its independent per-IP limit; `route_rate_limit` and `route_rate_burst` define an additional shared per-route limit. A root frontend with no per-IP fields is protected by the global limit only. For compatibility, a non-root upstream with a missing or zero per-IP rate inherits server-level `security.rate_limit` and `rate_limit_burst`; an upstream's positive per-IP rate takes precedence.
+
+The global bucket is charged before route dispatch, so a request rejected by a later route policy still consumes one global token. A rejection inside the route policy does not consume tokens from its other per-IP or per-route buckets.
 
 ### TCP/UDP example
 
@@ -111,13 +126,14 @@ leoxy version     # Print version
 ## Security
 
 - Rate limits are enforced per-minute with burst capacity
-- Redis can be used for distributed global rate limiting
+- Frontend and API per-IP limits are independent; the global HTTP limit remains shared
+- Redis can be used for the distributed global token bucket; `redis_fail_open: true` falls back to the local global bucket when Redis is unavailable
 - API keys via `X-API-Key` header or Bearer token
 - JWT authentication with HS256 (requires `exp`)
 - mTLS support behind TLS terminator
 - CIDR-based access control
 - Request body limits
 
-Set secrets via environment variables: `API_KEYS`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `REDIS_PASSWORD`. Override port with `PORT`, rate limit with `RATE_LIMIT`.
+Set secrets via environment variables: `API_KEYS`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `REDIS_PASSWORD`. Override port with `PORT`. `RATE_LIMIT` remains a compatibility override for the server-level legacy per-IP policy inherited by non-root upstreams; configure current per-route policies under each upstream's `security` block.
 
 For more details, see [CLI documentation](docs/cli.md) and [configuration examples](example/).

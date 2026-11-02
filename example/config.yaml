@@ -5,10 +5,8 @@ server:
   security:
     api_keys:
       - "your-secret-key"
-    rate_limit: 100
-    rate_limit_burst: 20
     global_rate_limit: 1000
-    global_rate_burst: 100
+    global_rate_burst: 1000
     max_body: 10
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
     trusted_proxy_cidrs: []
@@ -23,12 +21,17 @@ upstream:
       - "http://localhost:60459"
       - "http://localhost:60460"
     security:
-      route_rate_limit: 100
-      route_rate_burst: 20
+      rate_limit: 10000
+      rate_limit_burst: 1000
+      route_rate_limit: 1000
+      route_rate_burst: 50
 
   - name: "Frontend"
     path: /
     server_url: "http://localhost:3000"
+    security:
+      rate_limit: 1000
+      rate_limit_burst: 500
 
   - name: "TCPService"
     protocol: tcp

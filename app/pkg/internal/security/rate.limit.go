@@ -54,7 +54,7 @@ func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, ro
 
 	allow := func(r *http.Request) bool {
 		now := time.Now()
-		keys := make([]string, len(limits))
+		var keys [3]string
 		for i, l := range limits {
 			keys[i] = l.key(r)
 		}
@@ -70,7 +70,7 @@ func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, ro
 			lastSweep = now
 		}
 
-		updated := make([]bucket, len(limits))
+		var updated [3]bucket
 		for i, l := range limits {
 			current, ok := state[keys[i]]
 			if !ok {

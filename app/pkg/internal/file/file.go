@@ -10,8 +10,8 @@ const defaultConfig = `server:
   port: "4444"
 
   security:
-    rate_limit: 600
-    rate_limit_burst: 100
+    global_rate_limit: 600
+    global_rate_burst: 500
     max_body: 10
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
     trusted_proxy_cidrs: []

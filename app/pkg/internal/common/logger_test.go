@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -15,6 +16,7 @@ func TestRequestLoggerWritesRequestLog(t *testing.T) {
 	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
+	defer CloseRequestLogger(handler)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
@@ -38,6 +40,7 @@ func TestRequestLoggerWritesErrorsToBothLogs(t *testing.T) {
 	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 	}))
+	defer CloseRequestLogger(handler)
 
 	req := httptest.NewRequest(http.MethodPost, "/items", nil)
 	response := httptest.NewRecorder()
@@ -76,6 +79,7 @@ func TestRequestLoggerAddsRequestIDAndJSONFields(t *testing.T) {
 	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 	}))
+	defer CloseRequestLogger(handler)
 
 	req := httptest.NewRequest(http.MethodPut, "/items?id=secret", nil)
 	response := httptest.NewRecorder()
@@ -98,5 +102,29 @@ func TestRequestLoggerAddsRequestIDAndJSONFields(t *testing.T) {
 	}
 	if entry["request_id"] != requestID {
 		t.Fatalf("request ID = %v, want %s", entry["request_id"], requestID)
+	}
+}
+
+func BenchmarkLogFileWrite(b *testing.B) {
+	for _, test := range []struct {
+		name  string
+		close bool
+	}{
+		{name: "persistent"},
+		{name: "open_close_per_write", close: true},
+	} {
+		b.Run(test.name, func(b *testing.B) {
+			file := logFile{path: filepath.Join(b.TempDir(), "request.log")}
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				file.write(`{"method":"GET","path":"/app.css","status":200}`)
+				if test.close {
+					_ = file.close()
+				}
+			}
+			b.StopTimer()
+			_ = file.close()
+		})
 	}
 }

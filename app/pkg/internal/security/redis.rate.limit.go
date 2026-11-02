@@ -26,6 +26,23 @@ type RedisLimiter struct {
 	pool     chan *redisConn
 }
 
+const redisTokenBucketScript = `local time = redis.call('TIME')
+local now = tonumber(time[1]) + tonumber(time[2]) / 1000000
+local rate = tonumber(ARGV[1]) / 60
+local burst = tonumber(ARGV[2])
+local values = redis.call('HMGET', KEYS[1], 'tokens', 'updated')
+local tokens = tonumber(values[1]) or burst
+local updated = tonumber(values[2]) or now
+tokens = math.min(burst, tokens + math.max(0, now - updated) * rate)
+local allowed = 0
+if tokens >= 1 then
+  tokens = tokens - 1
+  allowed = 1
+end
+redis.call('HSET', KEYS[1], 'tokens', tokens, 'updated', now)
+redis.call('EXPIRE', KEYS[1], math.max(1, math.ceil(burst * 120 / tonumber(ARGV[1]))))
+return allowed`
+
 func NewRedisLimiter(addr, password string, database int) *RedisLimiter {
 	return &RedisLimiter{addr: addr, password: password, database: database, pool: make(chan *redisConn, 16)}
 }
@@ -56,6 +73,68 @@ func RedisRateLimitWithFailOpen(addr, password string, database, limit int, key 
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func RedisTokenBucketRateLimit(addr, password string, database, limit, burst int, key string, failOpen bool, next http.Handler) http.Handler {
+	localFallback := RateLimit(0, 0, 0, 0, limit, burst, key, next)
+	if strings.TrimSpace(addr) == "" || limit <= 0 {
+		return localFallback
+	}
+	if burst <= 0 {
+		burst = limit
+	}
+	limiter := NewRedisLimiter(addr, password, database)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		allowed, err := limiter.AllowTokenBucket(key, limit, burst)
+		if err != nil {
+			if failOpen {
+				localFallback.ServeHTTP(w, r)
+				return
+			}
+			http.Error(w, "rate limit store unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if !allowed {
+			w.Header().Set("Retry-After", "60")
+			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (limiter *RedisLimiter) AllowTokenBucket(key string, rate, burst int) (bool, error) {
+	conn, err := limiter.acquire()
+	if err != nil {
+		return false, err
+	}
+	if err := conn.SetDeadline(time.Now().Add(redisTimeout)); err != nil {
+		_ = conn.Close()
+		return false, err
+	}
+	err = conn.send([]string{
+		"EVAL",
+		redisTokenBucketScript,
+		"1",
+		key + ":token-bucket",
+		strconv.Itoa(rate),
+		strconv.Itoa(burst),
+	})
+	if err != nil {
+		_ = conn.Close()
+		return false, err
+	}
+	result, err := conn.reply()
+	if err != nil {
+		_ = conn.Close()
+		return false, err
+	}
+	select {
+	case limiter.pool <- conn:
+	default:
+		_ = conn.Close()
+	}
+	return result == 1, nil
 }
 
 func (limiter *RedisLimiter) Allow(key string, limit int) (bool, error) {
