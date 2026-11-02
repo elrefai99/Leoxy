@@ -13,11 +13,6 @@ var (
 	probeTimeout = 3 * time.Second
 	cacheTTL     = 5 * time.Second
 )
-var (
-	mx        sync.Mutex
-	checkedAt time.Time
-	cached    bool
-)
 
 func Ping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -32,6 +27,10 @@ func HealthProxy(w http.ResponseWriter, r *http.Request) {
 }
 
 func Readiness(targetGroups [][]*url.URL) http.HandlerFunc {
+	var mx sync.Mutex
+	var checkedAt time.Time
+	var cached bool
+
 	client := &http.Client{
 		Timeout: probeTimeout,
 		CheckRedirect: func(*http.Request, []*http.Request) error {
