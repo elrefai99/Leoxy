@@ -78,7 +78,14 @@ func serveFakeRedis(listener net.Listener, requests *atomic.Int64, errors chan<-
 			return
 		}
 		go func() {
-			defer conn.Close()
+			defer func() {
+				if err := conn.Close(); err != nil {
+					select {
+					case errors <- fmt.Errorf("close fake Redis connection: %w", err):
+					default:
+					}
+				}
+			}()
 			reader := bufio.NewReader(conn)
 			for {
 				args, err := readRedisCommand(reader)
