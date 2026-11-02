@@ -12,7 +12,8 @@ go build -o leoxy ./app/cli
 
 ```bash
 ./leoxy             # Foreground
-./leoxy start       # Background
+./leoxy start       # Run Leoxy in Background
+./leoxy restart     # Restart Leoxy in Background
 ./leoxy stop        # Stop
 ./leoxy version     # Version
 ```
