@@ -3,6 +3,8 @@ server:
   port: "4444"
 
   security:
+    api_keys:
+      - "your-secret-key"
     rate_limit: 100
     rate_limit_burst: 20
     global_rate_limit: 1000

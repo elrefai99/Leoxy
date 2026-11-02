@@ -9,38 +9,31 @@ upstream:
     path: /api
     ip: true
     servers:
-      - "http://127.0.0.1:9001"
-      - "http://127.0.0.1:9002"
+      - "http://127.0.0.1:9000"
+      # - "http://127.0.0.1:9002"
 
   - name: "Body"
     path: /body
     body: 1
-    server_url: "http://127.0.0.1:9001"
+    server_url: "http://127.0.0.1:9000"
 
   - name: "LimitedA"
     path: /limited-a
-    server_url: "http://127.0.0.1:9001"
+    server_url: "http://127.0.0.1:9000"
     security:
       rate_limit: 30
       rate_limit_burst: 5
 
   - name: "LimitedB"
     path: /limited-b
-    server_url: "http://127.0.0.1:9001"
-    security:
-      rate_limit: 30
-      rate_limit_burst: 5
-
-  - name: "LimitedC"
-    path: /limited-c
-    server_url: "http://127.0.0.1:9001"
+    server_url: "http://127.0.0.1:9000"
     security:
       rate_limit: 30
       rate_limit_burst: 5
 
   - name: "Frontend"
     path: /
-    server_url: "http://127.0.0.1:9001"
+    server_url: "http://127.0.0.1:3000"
 
   - name: "TCPService"
     protocol: tcp

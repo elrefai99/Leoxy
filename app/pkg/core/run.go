@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
@@ -56,7 +57,15 @@ func Run() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", health.Ping)
 	mux.HandleFunc("/health/live", health.HealthProxy)
-	mux.Handle("/metrics", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(metrics.Handler)))
+	mux.Handle("/metrics", http.HandlerFunc(metrics.Handler))
+
+	if os.Getenv("LEOXY_PPROF") == "true" {
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
+
 	mux.Handle("/leoxy", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/html/index.html")
 	})))

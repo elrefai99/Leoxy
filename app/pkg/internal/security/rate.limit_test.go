@@ -7,6 +7,86 @@ import (
 	"time"
 )
 
+func statusOf(handler http.Handler, remote string) (int, string) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = remote
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	return response.Code, response.Header().Get("Retry-After")
+}
+
+func TestRateLimitRefillsOverTime(t *testing.T) {
+	t.Parallel()
+	handler := RateLimit(60, 1, 0, 0, 0, 0, "/", pasthrough())
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
+		t.Fatalf("first status = %d", status)
+	}
+	status, retryAfter := statusOf(handler, "192.0.2.1:1")
+	if status != http.StatusTooManyRequests || retryAfter != "60" {
+		t.Fatalf("second status = %d, Retry-After = %q", status, retryAfter)
+	}
+	time.Sleep(1100 * time.Millisecond)
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
+		t.Fatalf("status after refill = %d", status)
+	}
+}
+
+func TestRateLimitBucketsAreIsolatedPerIP(t *testing.T) {
+	handler := RateLimit(60, 1, 0, 0, 0, 0, "/", pasthrough())
+	for _, remote := range []string{"192.0.2.1:1", "192.0.2.2:1"} {
+		if status, _ := statusOf(handler, remote); status != http.StatusOK {
+			t.Fatalf("%s status = %d", remote, status)
+		}
+	}
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusTooManyRequests {
+		t.Fatalf("second ip1 status = %d", status)
+	}
+}
+
+func TestRateLimitRouteBucketIsSharedAcrossClients(t *testing.T) {
+	handler := RateLimit(0, 0, 60, 1, 0, 0, "/r", pasthrough())
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
+		t.Fatalf("first status = %d", status)
+	}
+	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusTooManyRequests {
+		t.Fatalf("second status = %d", status)
+	}
+}
+
+func TestRateLimitGlobalBucketIsSharedAcrossClients(t *testing.T) {
+	handler := RateLimit(0, 0, 0, 0, 60, 1, "global", pasthrough())
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
+		t.Fatalf("first status = %d", status)
+	}
+	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusTooManyRequests {
+		t.Fatalf("second status = %d", status)
+	}
+}
+
+func TestRateLimitDisabledWhenRatesAreZero(t *testing.T) {
+	handler := RateLimit(0, 0, 0, 0, 0, 0, "/", pasthrough())
+	for i := 0; i < 200; i++ {
+		if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
+			t.Fatalf("request %d status = %d", i, status)
+		}
+	}
+}
+
+func TestDeniedRequestDoesNotConsumeOtherBuckets(t *testing.T) {
+	t.Parallel()
+	handler := RateLimit(1, 1, 60, 1, 0, 0, "/r", pasthrough())
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
+		t.Fatalf("first status = %d", status)
+	}
+	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusTooManyRequests {
+		t.Fatalf("second status = %d", status)
+	}
+	time.Sleep(1100 * time.Millisecond)
+	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusOK {
+		t.Fatalf("refilled status = %d", status)
+	}
+}
+
 func TestRateLimitDoesNotSerializeRequests(t *testing.T) {
 	release := make(chan struct{})
 	entered := make(chan struct{}, 2)

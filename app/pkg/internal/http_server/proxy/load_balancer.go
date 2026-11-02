@@ -134,10 +134,11 @@ type loadBalancedTransport struct {
 
 func (t loadBalancedTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	resp, err := t.base.RoundTrip(r)
-	if err != nil && r.Context().Err() == nil {
+	retryable := shared.RetryableMethod(r.Method) && (r.Body == nil || r.Body == http.NoBody || r.GetBody != nil)
+	if err != nil && r.Context().Err() == nil && retryable {
 		t.health.markDown(targetKey(r.URL))
 	}
-	if err == nil || len(t.targets) < 2 || !shared.RetryableMethod(r.Method) || (r.Body != nil && r.Body != http.NoBody && r.GetBody == nil) {
+	if err == nil || len(t.targets) < 2 || !retryable {
 		return resp, err
 	}
 

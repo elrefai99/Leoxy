@@ -81,6 +81,8 @@ func (l *logFile) write(message string) {
 	}
 	n, err := l.file.WriteString(time.Now().Format("2006/01/02 15:04:05 ") + message + "\n")
 	l.size += int64(n)
+	_ = l.file.Close()
+	l.file = nil
 	if err != nil {
 		log.Printf("write log file %s: %v", l.path, err)
 	}
