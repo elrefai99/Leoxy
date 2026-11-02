@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/elrefai99/Leoxy/app/pkg/core"
+	"github.com/elrefai99/Leoxy/app/internal/core"
 	"github.com/spf13/cobra"
 )
 
-const version = "v1.10.1"
+const version = "v1.11.2"
 
 var configFile, dataDir string
 
@@ -65,6 +65,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&dataDir, "data-dir", "", "Directory for logs and runtime state")
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(restartCmd)
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(runCmd)
 }

@@ -1,18 +1,40 @@
 #!/usr/bin/env sh
 set -eu
 
-goos="${1:-linux}"
-goarch="${2:-amd64}"
-goarm="${3:-}"
-extension=""
+build() {
+  goos="$1"
+  goarch="$2"
+  extension=""
 
-[ "$goos" = windows ] && extension=".exe"
+  if [ "$goos" = windows ]; then
+    extension=".exe"
+  fi
 
-arch="$goarch"
+  CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+    go build -trimpath -ldflags="-s -w" -o "dist/leoxy-$goos-$goarch$extension" ./app/cli
+}
 
-[ -n "$goarm" ] && arch="${goarch}v${goarm}"
+build_linux() {
+  build linux amd64
+  build linux arm64
+}
+
+build_windows() {
+  build windows amd64
+  build windows arm64
+}
 
 mkdir -p dist
 
-CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" \
-  go build -trimpath -ldflags="-s -w" -o "dist/leoxy-$goos-$arch$extension" ./app/cli
+case "${1:-all}" in
+  linux) build_linux ;;
+  windows) build_windows ;;
+  all)
+    build_linux
+    build_windows
+    ;;
+  *)
+    echo "usage: $0 [linux|windows|all]" >&2
+    exit 2
+    ;;
+esac

@@ -2,35 +2,37 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-compose=(docker compose -f docker/lx-2/docker-compose.yml)
+
+COMPOSE="docker compose -f docker/lx-2/docker-compose.yml"
+URL="127.0.0.1:4444"
 
 case "${1:-help}" in
      build)
-          "${compose[@]}" build
+          $COMPOSE build
      ;;
      up)
-          "${compose[@]}" up --build -d
-          "${compose[@]}" ps
+          $COMPOSE up -d --build
+          $COMPOSE ps
      ;;
      down)
-          "${compose[@]}" down
+          $COMPOSE down
      ;;
      restart)
-          "${compose[@]}" restart
+          $COMPOSE restart
      ;;
      logs)
-          "${compose[@]}" logs -f leoxy
+          $COMPOSE logs -f leoxy
      ;;
      status)
-          "${compose[@]}" ps
+          $COMPOSE ps
      ;;
      health)
-          "${compose[@]}" exec leoxy wget -q -O - http://127.0.0.1:4444/health/live
+          $COMPOSE exec leoxy wget -q -O - "http://${URL}/health/live"
      ;;
      clean)
-          "${compose[@]}" down --rmi local
+          $COMPOSE down --rmi local
      ;;
-     *)
-          echo "Usage: $0 {build|up|down|restart|logs|status|health|clean}"
+     help|*)
+          echo "Usage: ./script/docker.sh {build|up|down|restart|logs|status|health|clean}"
      ;;
 esac

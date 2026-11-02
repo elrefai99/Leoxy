@@ -1,0 +1,46 @@
+server:
+  port: "4444"
+  security:
+    max_body: 0
+    allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+
+upstream:
+  - name: "Backend"
+    path: /api
+    ip: true
+    servers:
+      - "http://127.0.0.1:9000"
+      # - "http://127.0.0.1:9002"
+
+  - name: "Body"
+    path: /body
+    body: 1
+    server_url: "http://127.0.0.1:9000"
+
+  - name: "LimitedA"
+    path: /limited-a
+    server_url: "http://127.0.0.1:9000"
+    security:
+      rate_limit: 30
+      rate_limit_burst: 5
+
+  - name: "LimitedB"
+    path: /limited-b
+    server_url: "http://127.0.0.1:9000"
+    security:
+      rate_limit: 30
+      rate_limit_burst: 5
+
+  - name: "Frontend"
+    path: /
+    server_url: "http://127.0.0.1:3000"
+
+  - name: "TCPService"
+    protocol: tcp
+    listen: "127.0.0.1:7001"
+    server_url: "127.0.0.1:9101"
+
+  - name: "UDPService"
+    protocol: udp
+    listen: "127.0.0.1:7002"
+    server_url: "127.0.0.1:9102"

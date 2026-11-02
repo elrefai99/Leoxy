@@ -13,18 +13,18 @@ Thanks for helping. Leoxy is a Go reverse proxy with HTTP, TCP and UDP upstreams
 
 ```text
 app/cli/                    CLI entrypoint (start, stop, version, hidden run)
-app/pkg/core/               platform process and signal helpers, server wiring and shutdown
-app/pkg/internal/common/    client IP, request logger, metrics
-app/pkg/internal/file/      config loading, validation, defaults
-app/pkg/internal/security/  access control, rate limits, body limit
-app/pkg/internal/http_server/  proxy, health, TCP, UDP, shared helpers
+app/internal/core/               platform process and signal helpers, server wiring and shutdown
+app/internal/common/    client IP, request logger, metrics
+app/internal/file/      config loading, validation, defaults
+app/internal/security/  access control, rate limits, body limit
+app/internal/http_server/  proxy, health, TCP, UDP, shared helpers
 tools/                      benchmark tool (separate module)
 docker/                     Dockerfiles and compose
 example/                    sample config
 docs/                       CLI and security notes
 ```
 
-`go.work` links `app` and `tools`. Keep new implementation code under `app/pkg/internal/` unless it is an executable entrypoint.
+`go.work` links `app` and `tools`. Keep new implementation code under `app/internal/` unless it is an executable entrypoint.
 
 ## Setup
 
@@ -55,7 +55,7 @@ govulncheck ./...
 - Standard Go style. mixedCaps identifiers, short local names, export only what other packages use.
 - Return or log errors with enough context to identify the operation. Never log secrets, tokens, API keys, or query strings.
 - No comments unless the code is not self-explanatory.
-- Keep route registration in `app/pkg/server` and request behavior in focused handlers.
+- Keep route registration in `app/server` and request behavior in focused handlers.
 - Every change to proxy, security, or config behavior needs a test. Tests live next to the package as `_test.go`, table-driven when several inputs are involved.
 - New config fields: add the `mapstructure` tag, validate in `file.Validate`, document in `README.md`, `docs/security.md` when relevant, and `example/config.yaml`.
 - Never hold a mutex while calling the next handler or doing network I/O.
