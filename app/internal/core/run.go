@@ -110,7 +110,7 @@ func Run() {
 		sec.JWTIssuer,
 		sec.JWTAudience,
 		sec.RequireMTLS,
-		securitymiddleware.Body(sec.MaxBody, mux),
+		mux,
 		sec.TrustedProxyCIDRs...,
 	)
 	if err != nil {

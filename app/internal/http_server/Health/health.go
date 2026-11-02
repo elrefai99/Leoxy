@@ -16,19 +16,21 @@ var (
 
 func Ping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("PONG"))
 }
 
 func HealthProxy(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }
 
 func Readiness(targetGroups [][]*url.URL) http.HandlerFunc {
+	var mx sync.Mutex
+	var checkedAt time.Time
+	var cached bool
+
 	client := &http.Client{
 		Timeout: probeTimeout,
 		CheckRedirect: func(*http.Request, []*http.Request) error {
@@ -64,13 +66,9 @@ func Readiness(targetGroups [][]*url.URL) http.HandlerFunc {
 		return false
 	}
 
-	var mutex sync.Mutex
-	var checkedAt time.Time
-	var cached bool
-
 	ready := func() bool {
-		mutex.Lock()
-		defer mutex.Unlock()
+		mx.Lock()
+		defer mx.Unlock()
 		if !checkedAt.IsZero() && time.Since(checkedAt) < cacheTTL {
 			return cached
 		}
