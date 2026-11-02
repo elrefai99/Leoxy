@@ -295,9 +295,6 @@ func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstre
 	if security.MaxBody <= 0 {
 		security.MaxBody = resource.Body
 	}
-	if security.MaxBody <= 0 {
-		security.MaxBody = global.MaxBody
-	}
 
 	var handler http.Handler = proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted)
 	handler = securitymiddleware.Body(security.MaxBody, handler)
