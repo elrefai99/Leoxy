@@ -110,7 +110,7 @@ func Run() {
 		sec.JWTIssuer,
 		sec.JWTAudience,
 		sec.RequireMTLS,
-		securitymiddleware.Body(sec.MaxBody, mux),
+		mux,
 		sec.TrustedProxyCIDRs...,
 	)
 	if err != nil {
@@ -294,6 +294,9 @@ func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstre
 	}
 	if security.MaxBody <= 0 {
 		security.MaxBody = resource.Body
+	}
+	if security.MaxBody <= 0 {
+		security.MaxBody = global.MaxBody
 	}
 
 	var handler http.Handler = proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted)
