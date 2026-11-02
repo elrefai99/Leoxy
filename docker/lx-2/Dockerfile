@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/leoxy .
 # =================== #
 # Stage 2: Production #
 # =================== #
-FROM alpine:3.22
+FROM alpine:3.24
 
 
 RUN apk add --no-cache ca-certificates wget \
