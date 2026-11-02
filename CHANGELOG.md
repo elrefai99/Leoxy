@@ -1,3 +1,19 @@
+## [1.11.2] - 2026-11-02
+
+### Added
+- add the restart CLI command
+- add load testing tools, live endpoint checks, and cross-platform CPU/RAM monitoring
+- add race and end-to-end CI workflows
+
+### Changed
+- correct rate limit documentation to use requests per minute
+
+### Fixed
+- fix load balancing and rate limit/burst behavior
+- fix server issues found during testing, including readiness checks and pprof
+- repair build, network test, Docker scripts, and container configurations
+- fix load test reporting and success status handling
+
 ## [Unreleased]
 
 ### Changed
