@@ -1,18 +1,75 @@
-TEST_DIR := script/test
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
+GOARM ?=
+DIST ?= dist
 
-.PHONY: build test run test-e2e test-endpoints test-load test-ratelimit test-auth
+EXT :=
+ifeq ($(GOOS),windows)
+EXT := .exe
+endif
+
+ARCH := $(GOARCH)
+ifneq ($(GOARM),)
+ARCH := $(GOARCH)v$(GOARM)
+endif
+
+OUTPUT := $(DIST)/leoxy-$(GOOS)-$(ARCH)$(EXT)
+
+TEST_DIR := script/test
+BENCH_URL ?= http://127.0.0.1:4444/ping
+BENCH_DURATION ?= 10s
+BENCH_CONCURRENCY ?= 50
+
+.PHONY: build build-linux build-windows build-all test race run bench
+.PHONY: test-live test-e2e test-endpoints test-network test-security test-lb test-body test-load test-ratelimit
+
+build:
+	go build -trimpath -o $(OUTPUT) ./app/cli
+
+build-linux:
+	sh script/build-lx-2/build.sh linux
+
+build-windows:
+	sh script/build-lx-2/build.sh windows
+
+build-all:
+	sh script/build-lx-2/build.sh all
+
+test:
+	go test ./...
+
+race:
+	go test -race ./app/... ./tools/...
+
+run:
+	go run ./app/cli
+
+bench:
+	go run ./tools/cmd -url $(BENCH_URL) -duration $(BENCH_DURATION) -concurrency $(BENCH_CONCURRENCY)
 
 test-e2e:
+	bash $(TEST_DIR)/e2e.sh
+
+test-live:
 	bash $(TEST_DIR)/run-all.sh
 
 test-endpoints:
 	bash $(TEST_DIR)/endpoints.sh
+
+test-network:
+	bash $(TEST_DIR)/network.sh
+
+test-security:
+	bash $(TEST_DIR)/security.sh
+
+test-lb:
+	bash $(TEST_DIR)/lb.sh
+
+test-body:
+	bash $(TEST_DIR)/body.sh
 
 test-load:
 	bash $(TEST_DIR)/load.sh
 
 test-ratelimit:
 	bash $(TEST_DIR)/ratelimit.sh
-
-test-auth:
-	bash $(TEST_DIR)/auth.sh
