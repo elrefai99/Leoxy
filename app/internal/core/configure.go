@@ -3,7 +3,7 @@ package core
 import (
 	"os"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/file"
+	"github.com/elrefai99/Leoxy/app/internal/file"
 )
 
 func Configure(configPath, dataDir string) error {

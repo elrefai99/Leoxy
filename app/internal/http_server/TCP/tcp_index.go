@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/http_server/shared"
+	"github.com/elrefai99/Leoxy/app/internal/http_server/shared"
 )
 
 const maxTCPConnections = 1024

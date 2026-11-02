@@ -4,7 +4,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/common"
+	"github.com/elrefai99/Leoxy/app/internal/common"
 )
 
 type StreamPolicy struct {

@@ -13,8 +13,8 @@ import (
 
 	"context"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/common"
-	"github.com/elrefai99/Leoxy/app/pkg/internal/http_server/shared"
+	"github.com/elrefai99/Leoxy/app/internal/common"
+	"github.com/elrefai99/Leoxy/app/internal/http_server/shared"
 )
 
 const targetCooldown = 10 * time.Second

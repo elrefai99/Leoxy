@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/file"
-	securitymiddleware "github.com/elrefai99/Leoxy/app/pkg/internal/security"
+	"github.com/elrefai99/Leoxy/app/internal/file"
+	securitymiddleware "github.com/elrefai99/Leoxy/app/internal/security"
 )
 
 type benchmarkResponseWriter struct {

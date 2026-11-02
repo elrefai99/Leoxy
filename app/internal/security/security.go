@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/common"
+	"github.com/elrefai99/Leoxy/app/internal/common"
 	"github.com/golang-jwt/jwt/v5"
 )
 

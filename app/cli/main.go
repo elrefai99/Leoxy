@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/elrefai99/Leoxy/app/pkg/core"
+	"github.com/elrefai99/Leoxy/app/internal/core"
 	"github.com/spf13/cobra"
 )
 

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/file"
+	"github.com/elrefai99/Leoxy/app/internal/file"
 )
 
 func TestHTTPRouteRateLimitIsolation(t *testing.T) {

@@ -16,14 +16,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/elrefai99/Leoxy/app/pkg/internal/common"
-	"github.com/elrefai99/Leoxy/app/pkg/internal/file"
-	health "github.com/elrefai99/Leoxy/app/pkg/internal/http_server/Health"
-	tcp "github.com/elrefai99/Leoxy/app/pkg/internal/http_server/TCP"
-	udp "github.com/elrefai99/Leoxy/app/pkg/internal/http_server/UDP"
-	"github.com/elrefai99/Leoxy/app/pkg/internal/http_server/proxy"
-	"github.com/elrefai99/Leoxy/app/pkg/internal/http_server/shared"
-	securitymiddleware "github.com/elrefai99/Leoxy/app/pkg/internal/security"
+	"github.com/elrefai99/Leoxy/app/internal/common"
+	"github.com/elrefai99/Leoxy/app/internal/file"
+	health "github.com/elrefai99/Leoxy/app/internal/http_server/Health"
+	tcp "github.com/elrefai99/Leoxy/app/internal/http_server/TCP"
+	udp "github.com/elrefai99/Leoxy/app/internal/http_server/UDP"
+	"github.com/elrefai99/Leoxy/app/internal/http_server/proxy"
+	"github.com/elrefai99/Leoxy/app/internal/http_server/shared"
+	securitymiddleware "github.com/elrefai99/Leoxy/app/internal/security"
 )
 
 var once sync.Once

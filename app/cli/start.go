@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	platform "github.com/elrefai99/Leoxy/app/pkg/core"
+	platform "github.com/elrefai99/Leoxy/app/internal/core"
 
 	"github.com/spf13/cobra"
 )
