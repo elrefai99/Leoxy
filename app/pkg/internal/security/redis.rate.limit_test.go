@@ -2,6 +2,7 @@ package security
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -18,7 +19,11 @@ func TestRedisTokenBucketRateLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	t.Cleanup(func() {
+		if err := listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close fake Redis listener: %v", err)
+		}
+	})
 	var requests atomic.Int64
 	errors := make(chan error, 1)
 	go serveFakeRedis(listener, &requests, errors)

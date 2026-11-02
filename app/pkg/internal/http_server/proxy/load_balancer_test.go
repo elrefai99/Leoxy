@@ -221,7 +221,11 @@ func TestProxyStreamsResponseBeforeUpstreamCompletes(t *testing.T) {
 		close(release)
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Errorf("close streamed response body: %v", err)
+		}
+	}()
 	line, err := bufio.NewReader(response.Body).ReadString('\n')
 	if err != nil {
 		close(release)

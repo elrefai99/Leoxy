@@ -1,6 +1,7 @@
 package udp
 
 import (
+	"errors"
 	"net"
 	"sync"
 	"testing"
@@ -13,7 +14,11 @@ func startEcho(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { conn.Close() })
+	t.Cleanup(func() {
+		if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close echo socket: %v", err)
+		}
+	})
 	go func() {
 		buffer := make([]byte, 65535)
 		for {
@@ -21,7 +26,10 @@ func startEcho(t *testing.T) string {
 			if err != nil {
 				return
 			}
-			conn.WriteToUDP(buffer[:n], addr)
+			if _, err := conn.WriteToUDP(buffer[:n], addr); err != nil && !errors.Is(err, net.ErrClosed) {
+				t.Errorf("write echo datagram: %v", err)
+				return
+			}
 		}
 	}()
 	return conn.LocalAddr().String()
@@ -43,7 +51,9 @@ func startProxy(t *testing.T, target string) (*net.UDPAddr, func(), <-chan error
 }
 
 func roundTrip(client *net.UDPConn, payload string) (string, error) {
-	client.SetDeadline(time.Now().Add(3 * time.Second))
+	if err := client.SetDeadline(time.Now().Add(3 * time.Second)); err != nil {
+		return "", err
+	}
 	if _, err := client.Write([]byte(payload)); err != nil {
 		return "", err
 	}
@@ -61,7 +71,11 @@ func dial(t *testing.T, proxy *net.UDPAddr) *net.UDPConn {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { client.Close() })
+	t.Cleanup(func() {
+		if err := client.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close UDP client: %v", err)
+		}
+	})
 	return client
 }
 

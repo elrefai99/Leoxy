@@ -1,10 +1,12 @@
 package tcp
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -15,16 +17,30 @@ func startEcho(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { listener.Close() })
+	t.Cleanup(func() {
+		if err := listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close echo listener: %v", err)
+		}
+	})
 	go func() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
+				if !errors.Is(err, net.ErrClosed) {
+					t.Errorf("accept echo connection: %v", err)
+				}
 				return
 			}
 			go func() {
-				defer conn.Close()
-				io.Copy(conn, conn)
+				defer func() {
+					if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+						t.Errorf("close echo connection: %v", err)
+					}
+				}()
+				if _, err := io.Copy(conn, conn); err != nil &&
+					!errors.Is(err, net.ErrClosed) && !errors.Is(err, syscall.ECONNRESET) {
+					t.Errorf("echo connection: %v", err)
+				}
 			}()
 		}
 	}()
@@ -53,8 +69,14 @@ func TestTCPProxyRelaysData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
-	conn.SetDeadline(time.Now().Add(3 * time.Second))
+	defer func() {
+		if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close client connection: %v", err)
+		}
+	}()
+	if err := conn.SetDeadline(time.Now().Add(3 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
 
 	if _, err := conn.Write([]byte("ping")); err != nil {
 		t.Fatal(err)
@@ -82,8 +104,15 @@ func TestTCPProxyHandlesParallelClients(t *testing.T) {
 				t.Errorf("client %d dial: %v", i, err)
 				return
 			}
-			defer conn.Close()
-			conn.SetDeadline(time.Now().Add(5 * time.Second))
+			defer func() {
+				if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+					t.Errorf("client %d close: %v", i, err)
+				}
+			}()
+			if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+				t.Errorf("client %d set deadline: %v", i, err)
+				return
+			}
 			if _, err := conn.Write([]byte(payload)); err != nil {
 				t.Errorf("client %d write: %v", i, err)
 				return
@@ -107,7 +136,9 @@ func TestTCPProxyClosesClientWhenUpstreamIsDown(t *testing.T) {
 		t.Fatal(err)
 	}
 	target := down.Addr().String()
-	down.Close()
+	if err := down.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	proxyAddr, _, _ := startProxy(t, target)
 
@@ -115,8 +146,14 @@ func TestTCPProxyClosesClientWhenUpstreamIsDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
-	conn.SetDeadline(time.Now().Add(5 * time.Second))
+	defer func() {
+		if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close client connection: %v", err)
+		}
+	}()
+	if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = conn.Read(make([]byte, 1))
 	if err == nil {

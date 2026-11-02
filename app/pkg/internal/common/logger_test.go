@@ -16,7 +16,11 @@ func TestRequestLoggerWritesRequestLog(t *testing.T) {
 	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	defer CloseRequestLogger(handler)
+	t.Cleanup(func() {
+		if err := CloseRequestLogger(handler); err != nil {
+			t.Errorf("close request logger: %v", err)
+		}
+	})
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
@@ -40,7 +44,11 @@ func TestRequestLoggerWritesErrorsToBothLogs(t *testing.T) {
 	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 	}))
-	defer CloseRequestLogger(handler)
+	t.Cleanup(func() {
+		if err := CloseRequestLogger(handler); err != nil {
+			t.Errorf("close request logger: %v", err)
+		}
+	})
 
 	req := httptest.NewRequest(http.MethodPost, "/items", nil)
 	response := httptest.NewRecorder()
@@ -79,7 +87,11 @@ func TestRequestLoggerAddsRequestIDAndJSONFields(t *testing.T) {
 	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 	}))
-	defer CloseRequestLogger(handler)
+	t.Cleanup(func() {
+		if err := CloseRequestLogger(handler); err != nil {
+			t.Errorf("close request logger: %v", err)
+		}
+	})
 
 	req := httptest.NewRequest(http.MethodPut, "/items?id=secret", nil)
 	response := httptest.NewRecorder()
