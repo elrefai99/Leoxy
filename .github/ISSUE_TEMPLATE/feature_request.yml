@@ -14,7 +14,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: Expected behavior, including config keys or CLI flags if relevant
+      description: Expected behavior, including config keys, env vars, or CLI flags if relevant
     validations:
       required: true
   - type: dropdown
@@ -29,8 +29,10 @@ body:
         - TCP / UDP
         - WebSocket / GraphQL / HTTP/3
         - Observability (metrics / logs)
+        - Configuration
         - CLI
         - Docker / deployment
+        - Platform support
         - Docs
     validations:
       required: true

@@ -5,13 +5,13 @@ labels: ["bug", "needs-triage"]
 body:
   - type: markdown
     attributes:
-      value: Redact jwt_secret, api_keys, redis_password, and private upstream URLs before pasting anything.
+      value: Redact jwt_secret, api_keys, redis_password, and private upstream URLs before pasting anything. Vulnerabilities go through SECURITY.md, not this form.
   - type: input
     id: version
     attributes:
       label: Leoxy version
       description: Output of `leoxy version`
-      placeholder: leoxy v3.8.2
+      placeholder: leoxy v1.12.2
     validations:
       required: true
   - type: dropdown
@@ -20,10 +20,11 @@ body:
       label: Deployment
       options:
         - Binary (foreground)
-        - Binary (leoxy start)
+        - Binary (leoxy start / restart)
         - Docker
         - Docker Compose
-        - Systemd / PM2
+        - Systemd
+        - PM2
     validations:
       required: true
   - type: dropdown
@@ -33,8 +34,8 @@ body:
       options:
         - Linux amd64
         - Linux arm64
-        - Linux armv7
-        - Windows
+        - Windows amd64
+        - Windows arm64
         - macOS
         - Other
     validations:
@@ -46,21 +47,26 @@ body:
       options:
         - HTTP routing / path prefix
         - Load balancing / failover
-        - Rate limiting (memory / Redis)
+        - Rate limiting (memory)
+        - Rate limiting (Redis)
         - Auth (API key / JWT / mTLS)
-        - CIDR / trusted proxy
-        - TCP / UDP proxy
+        - CIDR / trusted proxy / client IP
+        - Body size limits
+        - TCP proxy
+        - UDP proxy
         - WebSocket / GraphQL
         - Health / metrics
-        - CLI
-        - Docker
+        - Config loading / env overrides
+        - Logging
+        - CLI (start / stop / restart / version)
+        - Docker image
     validations:
       required: true
   - type: textarea
     id: config
     attributes:
       label: Configuration
-      description: Relevant part of leoxy/config.yaml, redacted
+      description: Relevant part of leoxy/config.yaml, redacted, plus env overrides in use (PORT, RATE_LIMIT, LEOXY_HOST, ...)
       render: yaml
     validations:
       required: true
@@ -89,5 +95,5 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: From leoxy/log/leoxy.log or log/error.log, redacted
+      description: leoxy/log/leoxy.log, log/request.log, log/error.log, or `docker logs`, redacted
       render: text
