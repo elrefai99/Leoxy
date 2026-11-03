@@ -24,6 +24,14 @@ type Upstream struct {
 	Security      Security `mapstructure:"security"`
 }
 
+type Timeout struct {
+	Connect uint `mapstructure:"connect"`
+	Read    uint `mapstructure:"read"`
+	Write   uint `mapstructure:"write"`
+	Idle    uint `mapstructure:"idle"`
+	Request uint `mapstructure:"request"`
+}
+
 type Security struct {
 	RateLimit         int      `mapstructure:"rate_limit"`
 	RateLimitBurst    int      `mapstructure:"rate_limit_burst"`
@@ -58,6 +66,7 @@ type ServerConfig struct {
 		Host     string   `mapstructure:"host"`
 		Port     string   `mapstructure:"port"`
 		Security Security `mapstructure:"security"`
+		Timeout  Timeout  `mapstructure:"timeout"`
 	} `mapstructure:"server"`
 	Upstream []Upstream `mapstructure:"upstream"`
 }
@@ -73,6 +82,7 @@ func Load() (*ServerConfig, error) {
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(`.`, `_`))
+
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("error loading config file: %s", err)
 	}
@@ -80,6 +90,21 @@ func Load() (*ServerConfig, error) {
 	var cfg ServerConfig
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("error reading config file: %s", err)
+	}
+	if cfg.Server.Timeout.Connect == 0 {
+		cfg.Server.Timeout.Connect = 5
+	}
+	if cfg.Server.Timeout.Read == 0 {
+		cfg.Server.Timeout.Read = 30
+	}
+	if cfg.Server.Timeout.Write == 0 {
+		cfg.Server.Timeout.Write = 30
+	}
+	if cfg.Server.Timeout.Idle == 0 {
+		cfg.Server.Timeout.Idle = 60
+	}
+	if cfg.Server.Timeout.Request == 0 {
+		cfg.Server.Timeout.Request = 60
 	}
 
 	if value := os.Getenv("PORT"); value != "" {

@@ -42,6 +42,7 @@ func Run() {
 	if err := file.Validate(cfg); err != nil {
 		log.Fatalf("invalid configuration: %v", err)
 	}
+	shared.ProxyTransport = shared.NewProxyTransport(time.Duration(cfg.Server.Timeout.Connect) * time.Second)
 	sec := cfg.Server.Security
 
 	trustedProxyCIDRs, err := common.ParseCIDRs(sec.TrustedProxyCIDRs)
@@ -135,8 +136,9 @@ func Run() {
 		Handler:           requestLogger,
 		TLSConfig:         tlsConfig,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		ReadTimeout:       time.Duration(cfg.Server.Timeout.Read) * time.Second,
+		WriteTimeout:      time.Duration(cfg.Server.Timeout.Write) * time.Second,
+		IdleTimeout:       time.Duration(cfg.Server.Timeout.Idle) * time.Second,
 		MaxHeaderBytes:    1 << 20,
 	}
 

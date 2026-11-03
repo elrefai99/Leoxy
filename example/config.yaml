@@ -1,50 +1,189 @@
-server:
+﻿server:
   host: "127.0.0.1"
   port: "4444"
 
+  timeout:
+    connect: 5
+    read: 30
+    write: 30
+    idle: 60
+    request: 60
+
   security:
-    api_keys:
-      - "your-secret-key"
+    rate_limit: 0
+    rate_limit_burst: 0
     global_rate_limit: 1000
     global_rate_burst: 1000
-    max_body: 10
+    route_rate_limit: 0
+    route_rate_burst: 0
+    api_keys: []
+    jwt_secret: ""
+    jwt_issuer: ""
+    jwt_audience: ""
+    require_mtls: false
+    allow_cidrs: []
+    deny_cidrs: []
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+    allowed_paths: []
+    max_body: 10
+    max_conns_per_ip: 0
+    redis_addr: ""
+    redis_password: ""
+    redis_db: 0
+    redis_fail_open: false
     trusted_proxy_cidrs: []
     internal_cidrs: []
+    tls_cert: ""
+    tls_key: ""
+    client_ca: ""
 
 upstream:
   - name: "Backend"
-    path: /api
+    protocol: "http"
+    listen: ""
+    path: "/api"
     ip: true
-    body: 10
+    server_url: ""
     servers:
       - "http://localhost:60459"
       - "http://localhost:60460"
+    limit_request: 0
+    body: 10
     security:
       rate_limit: 10000
       rate_limit_burst: 1000
+      global_rate_limit: 0
+      global_rate_burst: 0
       route_rate_limit: 1000
       route_rate_burst: 50
+      api_keys: []
+      jwt_secret: ""
+      jwt_issuer: ""
+      jwt_audience: ""
+      require_mtls: false
+      allow_cidrs: []
+      deny_cidrs: []
+      allowed_methods: []
+      allowed_paths: []
+      max_body: 0
+      max_conns_per_ip: 0
+      redis_addr: ""
+      redis_password: ""
+      redis_db: 0
+      redis_fail_open: false
+      trusted_proxy_cidrs: []
+      internal_cidrs: []
+      tls_cert: ""
+      tls_key: ""
+      client_ca: ""
 
   - name: "Frontend"
-    path: /
+    protocol: "http"
+    listen: ""
+    path: "/"
+    ip: false
     server_url: "http://localhost:3000"
+    servers: []
+    limit_request: 0
+    body: 10
     security:
       rate_limit: 1000
       rate_limit_burst: 500
+      global_rate_limit: 0
+      global_rate_burst: 0
+      route_rate_limit: 0
+      route_rate_burst: 0
+      api_keys: []
+      jwt_secret: ""
+      jwt_issuer: ""
+      jwt_audience: ""
+      require_mtls: false
+      allow_cidrs: []
+      deny_cidrs: []
+      allowed_methods: []
+      allowed_paths: []
+      max_body: 0
+      max_conns_per_ip: 0
+      redis_addr: ""
+      redis_password: ""
+      redis_db: 0
+      redis_fail_open: false
+      trusted_proxy_cidrs: []
+      internal_cidrs: []
+      tls_cert: ""
+      tls_key: ""
+      client_ca: ""
 
   - name: "TCPService"
-    protocol: tcp
+    protocol: "tcp"
     listen: ":7001"
+    path: ""
+    ip: false
     server_url: "127.0.0.1:7000"
+    servers: []
+    limit_request: 0
+    body: 0
     security:
+      rate_limit: 0
+      rate_limit_burst: 0
+      global_rate_limit: 0
+      global_rate_burst: 0
+      route_rate_limit: 0
+      route_rate_burst: 0
+      api_keys: []
+      jwt_secret: ""
+      jwt_issuer: ""
+      jwt_audience: ""
+      require_mtls: false
       allow_cidrs: ["10.0.0.0/8"]
+      deny_cidrs: []
+      allowed_methods: []
+      allowed_paths: []
+      max_body: 0
       max_conns_per_ip: 20
+      redis_addr: ""
+      redis_password: ""
+      redis_db: 0
+      redis_fail_open: false
+      trusted_proxy_cidrs: []
+      internal_cidrs: []
+      tls_cert: ""
+      tls_key: ""
+      client_ca: ""
 
   - name: "UDPService"
-    protocol: udp
+    protocol: "udp"
     listen: ":7002"
+    path: ""
+    ip: false
     server_url: "127.0.0.1:7003"
+    servers: []
+    limit_request: 0
+    body: 0
     security:
+      rate_limit: 0
+      rate_limit_burst: 0
+      global_rate_limit: 0
+      global_rate_burst: 0
+      route_rate_limit: 0
+      route_rate_burst: 0
+      api_keys: []
+      jwt_secret: ""
+      jwt_issuer: ""
+      jwt_audience: ""
+      require_mtls: false
       allow_cidrs: ["10.0.0.0/8"]
+      deny_cidrs: []
+      allowed_methods: []
+      allowed_paths: []
+      max_body: 0
       max_conns_per_ip: 20
+      redis_addr: ""
+      redis_password: ""
+      redis_db: 0
+      redis_fail_open: false
+      trusted_proxy_cidrs: []
+      internal_cidrs: []
+      tls_cert: ""
+      tls_key: ""
+      client_ca: ""
