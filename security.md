@@ -1,39 +1,47 @@
 # Leoxy security notes
 
-## Rate limits
+## Supported versions
 
-`rate_limit`, `global_rate_limit` and `route_rate_limit` are requests per minute. The burst values are the bucket size. IPv6 clients are limited per /64.
+Only the latest release receives security fixes.
 
-## Client IP
+## Reporting a vulnerability
 
-Set `trusted_proxy_cidrs` to the addresses of your TLS terminator. Without it every client appears as the proxy address and per-IP limits and CIDR rules apply to the proxy only. Leoxy reads `X-Forwarded-For` first and uses `X-Real-IP` only when that header is absent.
+Do not open a public issue.
 
-## Internal endpoints
+Report privately through [GitHub security advisories](https://github.com/elrefai99/Leoxy/security/advisories/new).
+If that is unavailable, email elrefai99@gmail.com.
 
-`/metrics`, `/health/ready` and `/leoxy` answer only to loopback and to `internal_cidrs`, and only when the request carries no forwarding headers. Also block them at the terminator:
+Include:
+- Leoxy version (`leoxy version`) and deployment method
+- Redacted `leoxy/config.yaml`
+- Steps to reproduce and observed impact
 
-```nginx
-location ~ ^/(metrics|health/ready|leoxy)$ { return 404; }
-```
+Redact `jwt_secret`, `api_keys`, `redis_password`, and private upstream URLs.
 
-`/ping` and `/health/live` are public and bypass authentication and rate limits.
+## Response
 
-## Authentication
+- Acknowledgement within 72 hours
+- Status update within 7 days
+- Fix and advisory published after a patch release is available
 
-`jwt_secret` must be at least 32 bytes. Set `jwt_issuer` and `jwt_audience` when tokens come from a shared identity provider. `api_keys` must not contain empty values. Keep secrets in environment variables.
+## Scope
 
-## mTLS
+In scope:
+- Authentication bypass (API key, JWT, mTLS when Leoxy terminates TLS)
+- Rate limit, body limit, or CIDR allow/deny bypass
+- Client IP spoofing through X-Forwarded-For, X-Real-IP, or CF-Connecting-IP from a peer that is not in `trusted_proxy_cidrs`
+- Access to `/metrics`, `/health/ready`, or `/leoxy` from outside loopback and `internal_cidrs`
+- Path prefix or path matching flaws that expose unintended routes
+- Secret exposure through logs, metrics, or error responses
+- Unbounded resource use in TCP/UDP proxying despite the connection and session limits
 
-`require_mtls` needs `tls_cert`, `tls_key` and `client_ca` on `server.security`. Leoxy then terminates TLS itself. Behind a TLS terminator, enforce client certificates there.
-
-## TCP and UDP listeners
-
-They bypass HTTP authentication. Set `allow_cidrs` and `max_conns_per_ip` on every stream upstream. UDP source addresses can be spoofed, so never expose a UDP listener to the internet.
-
-## Redis limiter
-
-`redis_fail_open: true` lets traffic through when Redis is down. The default rejects with 503.
-
-## Container
-
-Bind the published port to loopback or a private interface and put the TLS terminator in front. The data directory must be writable by the container user.
+Out of scope:
+- Exposing Leoxy directly to the internet without a TLS terminator or network controls
+- `require_mtls` behind a terminator that does not forward client certificates
+- Weak or committed secrets, or world-readable config files
+- Empty or overly broad `trusted_proxy_cidrs`, and empty `internal_cidrs` behind a proxy
+- `redis_fail_open: true` admitting traffic while Redis is down
+- TCP/UDP listeners without `allow_cidrs`, and UDP source spoofing; stream listeners bypass HTTP authentication by design
+- `/ping` and `/health/live`, which are public by design
+- Vulnerabilities in upstream applications or dependencies without a Leoxy-specific impact
+- Denial of service through traffic volume alone

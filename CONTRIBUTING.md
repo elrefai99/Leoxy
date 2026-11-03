@@ -1,93 +1,112 @@
 # Contributing to Leoxy
 
-Thanks for helping. Leoxy is a Go reverse proxy with HTTP, TCP and UDP upstreams, so changes touch network and security code. Keep them small, tested, and easy to review.
+## Before you start
+
+- Bugs and features: use the issue forms. Blank issues are disabled.
+- Vulnerabilities: do not open an issue. See [SECURITY.md](SECURITY.md).
+- For large changes, open a feature request first and agree on scope before coding.
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `app/cli` | Cobra CLI: run, start, restart, stop, version |
+| `app/internal/core` | Server bootstrap, routing, TLS, shutdown, platform process helpers |
+| `app/internal/http_server` | Proxy, load balancer, health, TCP, UDP, shared transport |
+| `app/internal/security` | Access control, JWT, rate limits (memory and Redis), body limit, internal-only |
+| `app/internal/file` | Config loading, validation, defaults |
+| `app/internal/common` | Client IP, request logger, metrics |
+| `tools` | Benchmark tool, separate Go module |
+| `docker/lx-2` | Dockerfile and Compose file |
+| `script` | End-to-end and load test scripts, build and service files |
+| `example` | Sample `config.yaml` |
+| `docs` | CLI docs, security notes, static page |
+
+`go.work` joins `app` and `tools`. Keep new implementation code under `app/internal/` unless it is an entrypoint.
 
 ## Requirements
 
-- Go 1.26.2 (see `.go-version`)
-- Git
-- Docker, only for image and compose changes
-- `govulncheck`: `go install golang.org/x/vuln/cmd/govulncheck@latest`
+- Go version from `.go-version`
+- GNU Make (optional)
+- Docker, only for image changes
 
-## Layout
+## Development
 
-```text
-app/cli/                    CLI entrypoint (start, stop, version, hidden run)
-app/internal/core/               platform process and signal helpers, server wiring and shutdown
-app/internal/common/    client IP, request logger, metrics
-app/internal/file/      config loading, validation, defaults
-app/internal/security/  access control, rate limits, body limit
-app/internal/http_server/  proxy, health, TCP, UDP, shared helpers
-tools/                      benchmark tool (separate module)
-docker/                     Dockerfiles and compose
-example/                    sample config
-docs/                       CLI and security notes
-```
-
-`go.work` links `app` and `tools`. Keep new implementation code under `app/internal/` unless it is an executable entrypoint.
-
-## Setup
-
-```bash
-git clone https://github.com/elrefai99/Leoxy.git
-cd Leoxy
-make build
+```sh
 make run
+make build
 ```
 
-`make run` creates `leoxy/config.yaml` on first start. Edit it, or start from `example/config.yaml`. Environment overrides are listed in `docs/cli.md`.
+A default `leoxy/config.yaml` is created on first start in the working directory. See [docs/cli.md](docs/cli.md) and `example/config.yaml`.
 
-## Before you open a PR
+## Before opening a PR
 
-Run from `app/`:
+From the repository root:
 
-```bash
-gofmt -l .
-go vet ./...
-go test -race ./...
-govulncheck ./...
+```sh
+gofmt -l app tools
+go vet ./app/... ./tools/...
+go test ./app/... ./tools/...
+go build ./app/... ./tools/...
 ```
 
-`gofmt -l` must print nothing. CI runs vet, test and build, plus the security workflow when present.
+`gofmt -l` must print nothing. CI runs vet, test and build per module, plus `go test -race` and `govulncheck` in the security workflow. Run the race detector locally for concurrency changes:
 
-## Coding rules
+```sh
+go test -race ./app/... ./tools/...
+```
 
-- Standard Go style. mixedCaps identifiers, short local names, export only what other packages use.
-- Return or log errors with enough context to identify the operation. Never log secrets, tokens, API keys, or query strings.
-- No comments unless the code is not self-explanatory.
-- Keep route registration in `app/server` and request behavior in focused handlers.
-- Every change to proxy, security, or config behavior needs a test. Tests live next to the package as `_test.go`, table-driven when several inputs are involved.
-- New config fields: add the `mapstructure` tag, validate in `file.Validate`, document in `README.md`, `docs/security.md` when relevant, and `example/config.yaml`.
+For OS-specific code (process, signal, detach files):
+
+```sh
+GOOS=windows go build ./app/cli
+GOOS=linux GOARCH=arm64 go build ./app/cli
+```
+
+For image changes:
+
+```sh
+docker compose -f docker/lx-2/docker-compose.yml config --quiet
+docker compose -f docker/lx-2/docker-compose.yml build
+```
+
+For end-to-end behavior, `make test-e2e` uses `script/test/` (needs `python3` and `curl`). For performance-sensitive changes, compare before and after with the benchmark tool in [tools/README.md](tools/README.md).
+
+## Code guidelines
+
+- Standard Go style, `gofmt` clean.
+- Keep changes small and scoped to the request.
+- Add `_test.go` files beside the package, table-driven where several inputs apply. Behavior changes need regression coverage.
 - Never hold a mutex while calling the next handler or doing network I/O.
-- Do not trust client-supplied forwarding headers except through `trusted_proxy_cidrs`.
-- Never commit `.env` files, credentials, tokens, or private upstream URLs.
-- Do not add a dependency without a clear reason. Prefer the standard library.
+- Do not trust client forwarding headers except through `trusted_proxy_cidrs`.
+- Do not log secrets, tokens, API keys, request bodies, or query strings.
+- No secrets, tokens, or private upstream URLs in code, tests, examples, or logs.
+- New config fields: add the `mapstructure` tag, validate in `file.Validate`, and document in `README.md`, `docs/security.md` when relevant, and `example/config.yaml`.
+- Prefer the standard library. Justify any new dependency.
 
 ## Security-sensitive changes
 
-Changes to authentication, rate limiting, client IP detection, TLS, TCP/UDP listeners, or default config must include:
-
-1. The threat or failure the change addresses.
-2. A test that fails without the change.
-3. Notes on any new default or breaking behavior.
-
-Report vulnerabilities privately by email to the maintainer listed in `AUTHORS`. Do not open a public issue for an unfixed vulnerability.
+Changes to authentication, rate limiting, client IP detection, TLS, TCP/UDP listeners, or default config must state the threat addressed, include a test that fails without the change, and note any new default or breaking behavior.
 
 ## Commits and pull requests
 
-Use Conventional Commit titles: lowercase, imperative, no trailing period, under about 70 characters.
+Title format: `type(scope): imperative summary`. Lowercase, no trailing period, under about 70 characters.
 
 | Type | Use for | Version bump |
 | --- | --- | --- |
-| `feat(scope)` | new capability, any file count | minor |
-| `chore(scope)` | small updates, at most 2 files | patch |
-| `refactor(scope)` | 3 or more files, no new capability | patch |
-| `fix(scope)` | bug fix for a bug live in production | patch |
-| `docs` | documentation only, no scope | none |
+| `feat` | New capability, any file count | minor |
+| `fix` | Bug live in production | patch |
+| `refactor` | 3 or more files, no new capability | patch |
+| `chore` | Small updates, max 2 files | patch |
+| `docs` | Documentation only, no scope | none |
 
-Scope is the package or feature name used in `git log` (for example `security`, `proxy`, `tcp`, `docker`). Omit it for repo-wide changes. Use `!` after the scope for a breaking change and call it out in the PR.
+Scope is the package or feature name used in `git log` (`security`, `proxy`, `tcp`, `docker`). Omit it for repo-wide changes. Use `!` after the scope for a breaking change; it needs maintainer agreement first.
 
-Each PR body has exactly three summary bullets, a version line, and a verification line:
+Each PR must:
+1. Bump the version in `version.json` and the `version` constant in `app/cli/main.go`, and keep `app/README.md` in step. `release.yml` tags `v<version>` from `version.json` on every push to `main`, so skipping the bump means no release.
+2. Add an entry at the top of `CHANGELOG.md` under Added, Changed, or Fixed. Docs-only PRs go under `[Unreleased]` with no bump.
+3. Use a body with exactly three summary bullets, the version change, and the exact verification commands and results, including what you did not test.
+4. Keep the three bullets identical in the PR body and the changelog.
 
 ```text
 ## Summary
@@ -99,27 +118,19 @@ Each PR body has exactly three summary bullets, a version line, and a verificati
 <old> -> <new>, see CHANGELOG.md
 
 ## Verification
-<exact commands and results, and what was not verified>
+<commands, results, and what was not verified>
 ```
 
-Each PR also:
+Do not write "safe" or "backward compatible" without evidence in the verification section.
 
-- adds the same three points to `CHANGELOG.md` under Added, Changed, Fixed, or Documentation (docs go under `[Unreleased]`)
-- bumps the version in both `version.json` and the `version` constant in `app/cli/main.go`, and keeps `app/README.md` in step
-- describes only its own changes, not inherited ones from a parent branch
+## CI
 
-State what you verified and what you did not. Do not write "safe" or "fixed" without pointing at a test or command.
+Every push and PR runs vet, test and build for `app` and `tools`, golangci-lint, and the security workflow. On `main`, the Docker workflow builds the image, validates Compose, and pushes to Docker Hub when credentials exist and `version.json` changed. A push to `main` also creates a GitHub release if the tag does not exist.
 
-## Docker and CI
+## AI-assisted contributions
 
-- Build the image with `docker build -f docker/lx-2/Dockerfile .` and validate compose with `docker compose -f docker/lx-2/docker-compose.yml config --quiet`.
-- Do not change `Dockerfile`, compose files, or `ecosystem.config.cjs` unless the change needs it.
-- Pin new GitHub Actions to a major version at minimum and keep `permissions` minimal.
-
-## AI coding agents
-
-Follow `AGENTS.md`. In short: ask before making a code change, show the intended change, keep changes simple, add no comments, never read or modify `.env` files, never run destructive git or shell commands, and do not rewrite large parts of the codebase without approval.
+Agents must follow [AGENTS.md](AGENTS.md): ask before changing code, keep changes minimal, never read or modify `.env` files, and never run destructive git or shell commands. Disclose AI assistance in one line at the end of the PR body.
 
 ## License
 
-By contributing you agree that your contribution is licensed under the Apache License 2.0 in `LICENSE`.
+By contributing, you agree your contributions are licensed under the Apache License 2.0.
