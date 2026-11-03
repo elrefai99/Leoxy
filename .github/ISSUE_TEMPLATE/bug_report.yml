@@ -1,0 +1,93 @@
+name: Bug report
+description: Report incorrect behavior in Leoxy
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Redact jwt_secret, api_keys, redis_password, and private upstream URLs before pasting anything.
+  - type: input
+    id: version
+    attributes:
+      label: Leoxy version
+      description: Output of `leoxy version`
+      placeholder: leoxy v3.8.2
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment
+      options:
+        - Binary (foreground)
+        - Binary (leoxy start)
+        - Docker
+        - Docker Compose
+        - Systemd / PM2
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS / architecture
+      options:
+        - Linux amd64
+        - Linux arm64
+        - Linux armv7
+        - Windows
+        - macOS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - HTTP routing / path prefix
+        - Load balancing / failover
+        - Rate limiting (memory / Redis)
+        - Auth (API key / JWT / mTLS)
+        - CIDR / trusted proxy
+        - TCP / UDP proxy
+        - WebSocket / GraphQL
+        - Health / metrics
+        - CLI
+        - Docker
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Relevant part of leoxy/config.yaml, redacted
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: From leoxy/log/leoxy.log or log/error.log, redacted
+      render: text
