@@ -40,6 +40,84 @@ jobs:
             echo "Creating release ${TAG}."
           fi
 
+      - name: Generate release notes
+        if: steps.version.outputs.exists == 'false'
+        shell: bash
+        run: |
+          PREVIOUS_TAG="$(git tag --list 'v*' --sort=-version:refname | head -n 1)"
+          echo "Previous release: ${PREVIOUS_TAG:-none}"
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RANGE="${PREVIOUS_TAG}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          export RANGE
+
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process')
+          const fs = require('node:fs')
+
+          const range = process.env.RANGE
+
+          const commits = execFileSync(
+            'git',
+            ['log', '--no-merges', '--format=%H%x09%s', range],
+            { encoding: 'utf8' }
+          )
+            .trim()
+            .split('\n')
+            .filter(Boolean)
+
+          const sections = {
+            feat: { title: 'Improvements', commits: [] },
+            fix: { title: 'Bug Fixes', commits: [] },
+            chore: { title: 'Maintenance', commits: [] },
+            perf: { title: 'Performance', commits: [] },
+            other: { title: 'Other Changes', commits: [] },
+          }
+
+          const repository = process.env.GITHUB_REPOSITORY
+
+          for (const line of commits) {
+            const [hash, ...subjectParts] = line.split('\t')
+            const subject = subjectParts.join('\t')
+
+            const match = subject.match(
+              /^(feat|fix|chore|perf)(?:\([^)]+\))?(!)?:\s*(.+)$/i
+            )
+
+            const type = match?.[1].toLowerCase() ?? 'other'
+            const message = match?.[3] ?? subject
+            const breaking = match?.[2] === '!'
+
+            const section = sections[type]
+
+            section.commits.push(
+              `- ${breaking ? '**BREAKING:** ' : ''}${message} ([${hash.slice(0, 7)}](https://github.com/${repository}/commit/${hash}))`
+            )
+          }
+
+          const notes = Object.values(sections)
+            .filter(section => section.commits.length > 0)
+            .map(section => [
+              `## ${section.title}`,
+              '',
+              ...section.commits,
+            ].join('\n'))
+            .join('\n\n')
+
+          fs.writeFileSync(
+            'release-notes.md',
+            `${notes || 'No changes found.'}\n`
+          )
+
+          console.log(notes)
+          NODE
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
       - name: Create GitHub Release
         if: steps.version.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
@@ -47,4 +125,4 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          generate_release_notes: true
+          body_path: release-notes.md
