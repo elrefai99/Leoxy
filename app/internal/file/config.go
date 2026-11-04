@@ -60,6 +60,7 @@ type Security struct {
 	AllowedPaths      []string `mapstructure:"allowed_paths"`
 	MaxBody           int      `mapstructure:"max_body"`
 	MaxConnsPerIP     int      `mapstructure:"max_conns_per_ip"`
+	RedisConnect      uint     `mapstructure:"redis_connect"`
 	RedisAddr         string   `mapstructure:"redis_addr"`
 	RedisPassword     string   `mapstructure:"redis_password"`
 	RedisDB           int      `mapstructure:"redis_db"`
@@ -116,6 +117,9 @@ func Load() (*ServerConfig, error) {
 	}
 	if cfg.Server.Timeout.Request == 0 {
 		cfg.Server.Timeout.Request = 60
+	}
+	if cfg.Server.Security.RedisConnect == 0 {
+		cfg.Server.Security.RedisConnect = 16
 	}
 
 	if value := os.Getenv("PORT"); value != "" {

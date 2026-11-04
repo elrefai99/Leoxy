@@ -28,7 +28,7 @@ func TestRedisTokenBucketRateLimit(t *testing.T) {
 	errors := make(chan error, 1)
 	go serveFakeRedis(listener, &requests, errors)
 
-	handler := RedisTokenBucketRateLimit(listener.Addr().String(), "", 0, 60, 1, "leoxy:test", false, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := RedisTokenBucketRateLimit(16, listener.Addr().String(), "", 0, 60, 1, "leoxy:test", false, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	if got, _ := statusOf(handler, "192.0.2.1:1000"); got != http.StatusNoContent {
@@ -60,7 +60,7 @@ func TestRedisTokenBucketFailOpenUsesLocalBucket(t *testing.T) {
 	if err := listener.Close(); err != nil {
 		t.Fatal(err)
 	}
-	handler := RedisTokenBucketRateLimit(address, "", 0, 60, 1, "leoxy:test", true, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := RedisTokenBucketRateLimit(16, address, "", 0, 60, 1, "leoxy:test", true, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	if got, _ := statusOf(handler, "192.0.2.1:1000"); got != http.StatusNoContent {

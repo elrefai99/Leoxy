@@ -192,6 +192,7 @@ func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handl
 		protected.ServeHTTP(w, r)
 	})
 	return securitymiddleware.RedisTokenBucketRateLimit(
+		security.RedisConnect,
 		security.RedisAddr,
 		security.RedisPassword,
 		security.RedisDB,

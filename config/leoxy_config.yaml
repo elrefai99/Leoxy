@@ -26,7 +26,8 @@
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
     allowed_paths: []
     max_body: 10
-    max_conns_per_ip: 0
+    max_conns_per_ip:
+    redis_connect: 16
     redis_addr: ""
     redis_password: ""
     redis_db: 0
