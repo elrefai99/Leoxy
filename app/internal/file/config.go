@@ -84,7 +84,7 @@ type ServerConfig struct {
 
 var Config *ServerConfig
 
-var ConfigPath = "leoxy/config.yaml"
+var ConfigPath = "leoxy/leoxy_config.yaml"
 
 var reservedPaths = []string{"/ping", "/health", "/metrics", "/leoxy"}
 
