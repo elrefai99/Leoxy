@@ -39,7 +39,31 @@ Mount the directory containing `leoxy_config.yaml` at `/app/leoxy` so configurat
 
 Keep credentials out of images and source control. Supply secrets through the container environment and ensure the mounted configuration has only the settings needed for the deployment. When using TLS certificate paths, mount the certificate files read-only and configure paths that exist inside the container.
 
-## Build and CI helper files
+## Available Dockerfiles
 
-`docker/lx-2/build/Dockerfile` and its `entrypoint.sh` form a development/CI image. Its entrypoint verifies Go modules, checks formatting, runs `go vet`, runs race-enabled tests, and builds the CLI. `docker/benchmark/Dockerfile` is an older benchmark image definition and references a `tools/` layout that is not the current benchmark module path; use `test/benchmark` directly unless that Dockerfile is updated for the current repository layout.
+| Dockerfile | Intended use | Notes |
+| --- | --- | --- |
+| `docker/lx-2/stable/Dockerfile` | Production Linux image used by the Docker workflow | Multi-stage build; runs as the `leoxy` user and includes `wget` plus a `/health/live` health check. |
+| `docker/lx-2/alpine/Dockerfile` | Alpine-based Leoxy image | Builds a Linux binary in Alpine. It currently declares `USER leoxy` without creating that user in the final stage, and its health check calls `wget` although the final stage does not install it. Resolve those image requirements before using this target. |
+| `docker/lx-2/alpine/windows/Dockerfile.windows` | Windows container image | Builds on Windows Server Core and runs on Nano Server LTSC 2022. Build it with a Windows container engine and compatible Windows host. |
+| `docker/lx-2/build/Dockerfile` | Development/CI image | Its entrypoint verifies Go modules, checks formatting, runs `go vet`, runs race-enabled tests, and builds the CLI. |
+| `docker/benchmark/Dockerfile` | Benchmark client image | This file still refers to the old `tools/` module layout. The current benchmark source is `test/benchmark`; use that Go module directly until the Dockerfile is updated. |
+
+Build the Alpine Linux target from the repository root with:
+
+```sh
+docker build -f docker/lx-2/alpine/Dockerfile -t leoxy:alpine .
+```
+
+For Windows containers, run the build on a Windows container host:
+
+```powershell
+docker build -f docker/lx-2/alpine/windows/Dockerfile.windows -t leoxy:windows .
+```
+
+## Docker workflow
+
+`.github/workflows/docker.yml` is a reusable workflow (`workflow_call`). It builds the stable image, validates and builds the stable Compose service, then pushes versioned and `latest` Docker Hub tags only when `version.json` changed and Docker Hub credentials are available. Otherwise, it completes a local image build without pushing. The workflow currently targets the stable Dockerfile; it does not build the Alpine, Windows, build-helper, or benchmark images.
+
+The Compose validation/build steps use `docker/lx-2/stable/docker-compose.yml`. Its `build.dockerfile` currently points to `docker/lx-2/Dockerfile`, which is absent; update that path to `docker/lx-2/stable/Dockerfile` for those workflow steps to succeed.
 
