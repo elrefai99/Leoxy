@@ -24,6 +24,7 @@ import (
 	"github.com/elrefai99/Leoxy/app/internal/http_server/proxy"
 	"github.com/elrefai99/Leoxy/app/internal/http_server/shared"
 	securitymiddleware "github.com/elrefai99/Leoxy/app/internal/security"
+	"github.com/elrefai99/Leoxy/app/internal/watcher"
 )
 
 var once sync.Once
@@ -76,6 +77,19 @@ func Run() {
 	defer signal.Stop(shutdown)
 
 	done := make(chan struct{})
+	if cfg.Watcher.Status == "on" {
+		watcher.Start(watcher.Options{
+			Project:     cfg.Watcher.ProjectName,
+			LimitMB:     cfg.Watcher.MemoryLimitMB,
+			Interval:    time.Duration(cfg.Watcher.IntervalSeconds) * time.Second,
+			Cooldown:    time.Duration(cfg.Watcher.CooldownSeconds) * time.Second,
+			HeapProfile: cfg.Watcher.HeapProfile,
+			WebhookURL:  cfg.Watcher.WebhookURL,
+		}, func(sample watcher.Sample) {
+			metrics.SetMemory(sample.MemoryBytes)
+		}, done)
+	}
+
 	var closeOnce sync.Once
 	stop := func() { closeOnce.Do(func() { close(done) }) }
 	defer stop()

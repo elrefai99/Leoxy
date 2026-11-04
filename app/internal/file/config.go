@@ -32,6 +32,16 @@ type Timeout struct {
 	Request uint `mapstructure:"request"`
 }
 
+type Watcher struct {
+	Status          string `mapstructure:"status"`
+	ProjectName     string `mapstructure:"project_name"`
+	MemoryLimitMB   int    `mapstructure:"memory_limit_mb"`
+	IntervalSeconds int    `mapstructure:"interval_seconds"`
+	CooldownSeconds int    `mapstructure:"cooldown_seconds"`
+	HeapProfile     bool   `mapstructure:"heap_profile"`
+	WebhookURL      string `mapstructure:"webhook_url"`
+}
+
 type Security struct {
 	RateLimit         int      `mapstructure:"rate_limit"`
 	RateLimitBurst    int      `mapstructure:"rate_limit_burst"`
@@ -69,6 +79,7 @@ type ServerConfig struct {
 		Timeout  Timeout  `mapstructure:"timeout"`
 	} `mapstructure:"server"`
 	Upstream []Upstream `mapstructure:"upstream"`
+	Watcher  Watcher    `mapstructure:"watcher"`
 }
 
 var Config *ServerConfig
@@ -134,6 +145,17 @@ func Load() (*ServerConfig, error) {
 	}
 	if value := os.Getenv("REDIS_PASSWORD"); value != "" {
 		cfg.Server.Security.RedisPassword = value
+	}
+	if value := os.Getenv("MEMORY_LIMIT_MB"); value != "" {
+		if limit, err := strconv.Atoi(value); err == nil {
+			cfg.Watcher.MemoryLimitMB = limit
+		}
+	}
+	if value := os.Getenv("PROJECT_NAME"); value != "" {
+		cfg.Watcher.ProjectName = value
+	}
+	if value := os.Getenv("Watcher_WEBHOOK_URL"); value != "" {
+		cfg.Watcher.WebhookURL = value
 	}
 
 	Config = &cfg

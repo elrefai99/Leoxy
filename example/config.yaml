@@ -37,6 +37,15 @@
     tls_key: ""
     client_ca: ""
 
+watcher:
+  status: "on"
+  project_name: "pbe"
+  memory_limit_mb: 100
+  interval_seconds: 5
+  cooldown_seconds: 300
+  heap_profile: true
+  webhook_url: "https://usersite.site/" # POST METHOD
+
 upstream:
   - name: "Backend"
     protocol: "http"
