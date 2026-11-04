@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -28,10 +29,9 @@ func Notify(client *http.Client, target string, report Report) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
-
+	var notifyErr error
 	if response.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf("webhook returned http %d", response.StatusCode)
+		notifyErr = fmt.Errorf("webhook returned http %d", response.StatusCode)
 	}
-	return nil
+	return errors.Join(notifyErr, response.Body.Close())
 }

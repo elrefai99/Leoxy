@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -94,8 +95,7 @@ func writeHeapProfile(path string) error {
 		return err
 	}
 	if err := pprof.Lookup("heap").WriteTo(file, 0); err != nil {
-		file.Close()
-		return err
+		return errors.Join(err, file.Close())
 	}
 	return file.Close()
 }
@@ -106,13 +106,10 @@ func writeAtomic(path string, data []byte) error {
 		return err
 	}
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		os.Remove(tmp.Name())
-		return err
+		return errors.Join(err, tmp.Close(), os.Remove(tmp.Name()))
 	}
 	if err := tmp.Close(); err != nil {
-		os.Remove(tmp.Name())
-		return err
+		return errors.Join(err, os.Remove(tmp.Name()))
 	}
 	return os.Rename(tmp.Name(), path)
 }

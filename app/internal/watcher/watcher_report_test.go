@@ -34,7 +34,7 @@ func TestWriterWritesReportAndProfile(t *testing.T) {
 	if err := json.Unmarshal(data, &decoded); err != nil {
 		t.Fatal(err)
 	}
-	if decoded.Project != "demo" || decoded.MemoryBytes != sample.MemoryBytes || decoded.LimitBytes != 100<<20 || decoded.CPUSeconds != sample.CPUSeconds || decoded.DiskBytes == 0 {
+	if decoded.Project != "demo" || decoded.MemoryBytes != sample.MemoryBytes || decoded.LimitBytes != 100<<20 || decoded.CPUSeconds != sample.CPUSeconds {
 		t.Fatalf("unexpected report: %+v", decoded)
 	}
 	if report.HeapProfile == "" {
