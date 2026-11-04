@@ -9,13 +9,6 @@ const defaultConfig = `server:
   host: "127.0.0.1"
   port: "4444"
 
-  timeout:
-    connect: 5
-    read: 30
-    write: 30
-    idle: 60
-    request: 60
-
   security:
     global_rate_limit: 600
     global_rate_burst: 500
