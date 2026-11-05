@@ -10,6 +10,7 @@ dist
 
 # Logs
 log
+*.csv
 
 # ai files
 GEMINI.md

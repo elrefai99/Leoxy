@@ -1,6 +1,3 @@
-# =============== #
-# Stage 1: Build  #
-# =============== #
 FROM golang:1.27.3 AS builder
 
 WORKDIR /app/app
@@ -14,11 +11,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/leoxy ./app/cli
 
-# =================== #
-# Stage 2: Production #
-# =================== #
 FROM alpine:3.22
-
 
 RUN apk add --no-cache ca-certificates wget \
     && addgroup -S leoxy \

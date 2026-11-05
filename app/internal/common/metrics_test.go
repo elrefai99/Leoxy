@@ -43,3 +43,14 @@ func TestMetricsUseRoutePatternInsteadOfRequestPath(t *testing.T) {
 		t.Fatalf("route pattern metric missing: %s", response.Body.String())
 	}
 }
+
+func TestMetricsExposeMemoryGauge(t *testing.T) {
+	metrics := NewMetrics()
+	metrics.SetMemory(1234)
+
+	response := httptest.NewRecorder()
+	metrics.Handler(response, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	if !strings.Contains(response.Body.String(), "leoxy_memory_bytes 1234") {
+		t.Fatalf("memory gauge missing: %s", response.Body.String())
+	}
+}

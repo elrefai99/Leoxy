@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,6 +14,11 @@ type Metrics struct {
 	requests    map[string]uint64
 	status      map[int]uint64
 	requestTime time.Duration
+	memoryBytes atomic.Uint64
+}
+
+func (metrics *Metrics) SetMemory(value uint64) {
+	metrics.memoryBytes.Store(value)
 }
 
 func NewMetrics() *Metrics {
@@ -78,4 +84,6 @@ func (metrics *Metrics) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = fmt.Fprintf(w, "leoxy_request_duration_seconds_total %f\n", metrics.requestTime.Seconds())
+	_, _ = fmt.Fprintln(w, "# TYPE leoxy_memory_bytes gauge")
+	_, _ = fmt.Fprintf(w, "leoxy_memory_bytes %d\n", metrics.memoryBytes.Load())
 }

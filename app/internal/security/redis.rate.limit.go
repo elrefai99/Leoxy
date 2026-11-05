@@ -43,19 +43,19 @@ redis.call('HSET', KEYS[1], 'tokens', tokens, 'updated', now)
 redis.call('EXPIRE', KEYS[1], math.max(1, math.ceil(burst * 120 / tonumber(ARGV[1]))))
 return allowed`
 
-func NewRedisLimiter(addr, password string, database int) *RedisLimiter {
-	return &RedisLimiter{addr: addr, password: password, database: database, pool: make(chan *redisConn, 16)}
+func NewRedisLimiter(connect uint, addr, password string, database int) *RedisLimiter {
+	return &RedisLimiter{addr: addr, password: password, database: database, pool: make(chan *redisConn, connect)}
 }
 
-func RedisRateLimit(addr, password string, database, limit int, key string, next http.Handler) http.Handler {
-	return RedisRateLimitWithFailOpen(addr, password, database, limit, key, false, next)
+func RedisRateLimit(connect uint, addr, password string, database, limit int, key string, next http.Handler) http.Handler {
+	return RedisRateLimitWithFailOpen(connect, addr, password, database, limit, key, false, next)
 }
 
-func RedisRateLimitWithFailOpen(addr, password string, database, limit int, key string, failOpen bool, next http.Handler) http.Handler {
+func RedisRateLimitWithFailOpen(connect uint, addr, password string, database, limit int, key string, failOpen bool, next http.Handler) http.Handler {
 	if strings.TrimSpace(addr) == "" || limit <= 0 {
 		return next
 	}
-	limiter := NewRedisLimiter(addr, password, database)
+	limiter := NewRedisLimiter(connect, addr, password, database)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		allowed, err := limiter.Allow(key+":"+time.Now().UTC().Format("200601021504"), limit)
 		if err != nil {
@@ -75,7 +75,7 @@ func RedisRateLimitWithFailOpen(addr, password string, database, limit int, key 
 	})
 }
 
-func RedisTokenBucketRateLimit(addr, password string, database, limit, burst int, key string, failOpen bool, next http.Handler) http.Handler {
+func RedisTokenBucketRateLimit(connect uint, addr, password string, database, limit, burst int, key string, failOpen bool, next http.Handler) http.Handler {
 	localFallback := RateLimit(0, 0, 0, 0, limit, burst, key, next)
 	if strings.TrimSpace(addr) == "" || limit <= 0 {
 		return localFallback
@@ -83,7 +83,7 @@ func RedisTokenBucketRateLimit(addr, password string, database, limit, burst int
 	if burst <= 0 {
 		burst = limit
 	}
-	limiter := NewRedisLimiter(addr, password, database)
+	limiter := NewRedisLimiter(connect, addr, password, database)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		allowed, err := limiter.AllowTokenBucket(key, limit, burst)
 		if err != nil {

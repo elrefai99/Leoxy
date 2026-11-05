@@ -12,17 +12,24 @@ func IsClosedError(err error) bool {
 	return errors.Is(err, net.ErrClosed)
 }
 
-var ProxyTransport = &http.Transport{
-	Proxy:                 nil,
-	DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-	ForceAttemptHTTP2:     true,
-	TLSClientConfig:       &tls.Config{MinVersion: tls.VersionTLS12},
-	TLSHandshakeTimeout:   10 * time.Second,
-	ResponseHeaderTimeout: 15 * time.Second,
-	IdleConnTimeout:       90 * time.Second,
-	MaxIdleConns:          1024,
-	MaxIdleConnsPerHost:   256,
-	ExpectContinueTimeout: 1 * time.Second,
+var ProxyTransport = NewProxyTransport(10 * time.Second)
+
+func NewProxyTransport(connectTimeout time.Duration) *http.Transport {
+	return &http.Transport{
+		Proxy: nil,
+		DialContext: (&net.Dialer{
+			Timeout:   connectTimeout,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		TLSClientConfig:       &tls.Config{MinVersion: tls.VersionTLS12},
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 15 * time.Second,
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConns:          1024,
+		MaxIdleConnsPerHost:   256,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
 }
 
 func RequestScheme(r *http.Request) string {

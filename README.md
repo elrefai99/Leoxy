@@ -49,7 +49,7 @@ go build -o leoxy ./app/cli
 
 ## Configuration
 
-LX-2 reads configuration from `leoxy/config.yaml`. On first start, a default config is created.
+Leoxy reads configuration from `leoxy/leoxy_config.yaml`. On first start, a default config is created. See the [configuration guide](docs/configuration.md) for the full field reference and setup instructions.
 
 ### Basic example
 
@@ -136,4 +136,11 @@ leoxy version     # Print version
 
 Set secrets via environment variables: `API_KEYS`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `REDIS_PASSWORD`. Override port with `PORT`. `RATE_LIMIT` remains a compatibility override for the server-level legacy per-IP policy inherited by non-root upstreams; configure current per-route policies under each upstream's `security` block.
 
-For more details, see [CLI documentation](docs/cli.md) and [configuration examples](example/).
+## Documentation
+
+- [Leoxy overview and usage](docs/leoxy.md)
+- [Configuration reference](docs/configuration.md)
+- [CLI commands](docs/cli.md)
+- [Docker deployment](docs/docker.md)
+- [Benchmark tool](docs/benchmark.md)
+- [Resource watcher](docs/watcher/watcher.md)
