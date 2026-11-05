@@ -22,7 +22,7 @@ RUN apk add --no-cache ca-certificates wget \
 WORKDIR /app
 
 COPY --from=builder /out/leoxy /usr/local/bin/leoxy
-COPY --from=builder --chown=leoxy:leoxy /app/docs/html /app/docs/html
+COPY --chown=leoxy:leoxy docs/html /app/docs/html
 
 USER leoxy
 
