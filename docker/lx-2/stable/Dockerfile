@@ -13,12 +13,14 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/leoxy .
 
 FROM alpine:3.22
 
+ENV LEOXY_HOST=0.0.0.0
+
 RUN apk add --no-cache ca-certificates wget \
     && addgroup -S leoxy \
     && adduser -S -G leoxy leoxy \
     && mkdir -p /app/leoxy /app/log /app/docs/html \
     && chown -R leoxy:leoxy /app
-
+    
 WORKDIR /app
 
 COPY --from=builder /out/leoxy /usr/local/bin/leoxy
