@@ -12,11 +12,12 @@ import (
 )
 
 type Sample struct {
-	At          time.Time
-	MemoryBytes uint64
-	HeapBytes   uint64
-	Goroutines  uint64
-	CPUSeconds  float64
+	At            time.Time
+	MemoryBytes   uint64
+	TotalRAMBytes uint64
+	HeapBytes     uint64
+	Goroutines    uint64
+	CPUSeconds    float64
 }
 
 type Options struct {
@@ -66,11 +67,12 @@ func ReadSample() Sample {
 	}
 
 	return Sample{
-		At:          time.Now(),
-		MemoryBytes: memory,
-		HeapBytes:   uintValue(samples[2]),
-		Goroutines:  uintValue(samples[3]),
-		CPUSeconds:  floatValue(samples[4]),
+		At:            time.Now(),
+		MemoryBytes:   memory,
+		HeapBytes:     uintValue(samples[2]),
+		Goroutines:    uintValue(samples[3]),
+		CPUSeconds:    floatValue(samples[4]),
+		TotalRAMBytes: totalRAMBytes(),
 	}
 }
 

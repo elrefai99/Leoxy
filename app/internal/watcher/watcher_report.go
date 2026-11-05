@@ -21,6 +21,7 @@ type Report struct {
 	UptimeSeconds int64     `json:"uptime_seconds"`
 	LimitBytes    uint64    `json:"limit_bytes"`
 	MemoryBytes   uint64    `json:"memory_bytes"`
+	TotalRAMBytes uint64    `json:"total_ram_bytes"`
 	HeapBytes     uint64    `json:"heap_bytes"`
 	Goroutines    uint64    `json:"goroutines"`
 	CPUSeconds    float64   `json:"cpu_seconds"`
@@ -46,6 +47,7 @@ func (w *Writer) Write(sample Sample, limit uint64) (Report, error) {
 		UptimeSeconds: int64(sample.At.Sub(w.Started).Seconds()),
 		LimitBytes:    limit,
 		MemoryBytes:   sample.MemoryBytes,
+		TotalRAMBytes: sample.TotalRAMBytes,
 		HeapBytes:     sample.HeapBytes,
 		Goroutines:    sample.Goroutines,
 		CPUSeconds:    sample.CPUSeconds,
