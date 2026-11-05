@@ -13,6 +13,7 @@ services:
 
     environment:
       PORT: 4444
+      LEOXY_HOST: 0.0.0.0
 
     volumes:
       - ./leoxy:/app/leoxy
