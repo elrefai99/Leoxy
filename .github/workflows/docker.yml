@@ -23,7 +23,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/lx-2/stable/Dockerfile
+          file: ./docker/stable/Dockerfile
           push: false
           load: true
           cache-from: type=gha
@@ -44,10 +44,10 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Validate Compose configuration
-        run: docker compose -f ./docker/lx-2/stable/docker-compose.yml config --quiet
+        run: docker compose -f ./docker/stable/docker-compose.yml config --quiet
 
       - name: Build Compose services
-        run: docker compose -f ./docker/lx-2/stable/docker-compose.yml build
+        run: docker compose -f ./docker/stable/docker-compose.yml build
 
       - name: Build Compose summary
         run: |
@@ -109,7 +109,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/lx-2/stable/Dockerfile
+          file: ./docker/stable/Dockerfile
           push: ${{ steps.check-dockerhub.outputs.push }}
           load: ${{ steps.check-dockerhub.outputs.push != 'true' }}
           tags: |
