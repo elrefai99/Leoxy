@@ -111,10 +111,6 @@ type requestLoggerHandler struct {
 }
 
 func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if strings.Contains(r.URL.Path, "/node_modules") {
-		h.next.ServeHTTP(w, r)
-		return
-	}
 
 	requestID := strings.TrimSpace(r.Header.Get("X-Request-ID"))
 	if !validRequestID(requestID) {

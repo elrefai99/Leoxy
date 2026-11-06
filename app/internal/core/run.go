@@ -59,7 +59,7 @@ func Run() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", health.Ping)
 	mux.HandleFunc("/health/live", health.HealthProxy)
-	mux.Handle("/metrics", http.HandlerFunc(metrics.Handler))
+	mux.Handle("/metrics", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(metrics.Handler)))
 
 	if os.Getenv("LEOXY_PPROF") == "true" {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -184,24 +184,16 @@ func Run() {
 }
 
 func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
-	root := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	limited := securitymiddleware.RedisTokenBucketRateLimit(
+		security.RedisConnect, security.RedisAddr, security.RedisPassword, security.RedisDB,
+		security.GlobalRateLimit, security.GlobalRateBurst, "leoxy:global", security.RedisFailOpen, protected)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
 			mux.ServeHTTP(w, r)
 			return
 		}
-		protected.ServeHTTP(w, r)
+		limited.ServeHTTP(w, r)
 	})
-	return securitymiddleware.RedisTokenBucketRateLimit(
-		security.RedisConnect,
-		security.RedisAddr,
-		security.RedisPassword,
-		security.RedisDB,
-		security.GlobalRateLimit,
-		security.GlobalRateBurst,
-		"leoxy:global",
-		security.RedisFailOpen,
-		root,
-	)
 }
 
 func listenAddress(host, port string) string {
@@ -312,7 +304,9 @@ func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstre
 	if security.MaxBody <= 0 {
 		security.MaxBody = resource.Body
 	}
-
+	if security.MaxBody <= 0 {
+		security.MaxBody = global.MaxBody
+	}
 	var handler http.Handler = proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted)
 	handler = securitymiddleware.Body(security.MaxBody, handler)
 	secured, err := securitymiddleware.AccessControlWithJWT(
