@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -105,17 +106,13 @@ type requestLogger struct {
 }
 
 type requestLoggerHandler struct {
-	next    http.Handler
-	logger  *requestLogger
-	trusted []*net.IPNet
+	next      http.Handler
+	logger    *requestLogger
+	trusted   []*net.IPNet
+	skipPaths []string
 }
 
 func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if strings.Contains(r.URL.Path, "/node_modules") {
-		h.next.ServeHTTP(w, r)
-		return
-	}
-
 	requestID := strings.TrimSpace(r.Header.Get("X-Request-ID"))
 	if !validRequestID(requestID) {
 		requestID = newRequestID()
@@ -131,8 +128,41 @@ func (h *requestLoggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	if status == 0 {
 		status = http.StatusOK
 	}
+	if status < http.StatusBadRequest && skipLogging(r.URL.Path, h.skipPaths) {
+		return
+	}
 	entry := logEntry(r, status, time.Since(start), h.trusted)
 	h.logger.write(entry, status >= http.StatusBadRequest)
+}
+
+func skipLogging(value string, prefixes []string) bool {
+	if len(prefixes) == 0 {
+		return false
+	}
+	cleaned := path.Clean(value)
+	for _, prefix := range prefixes {
+		if cleaned == prefix || strings.HasPrefix(cleaned, prefix+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeSkipPaths(values []string) []string {
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if !strings.HasPrefix(value, "/") {
+			value = "/" + value
+		}
+		if cleaned := path.Clean(value); cleaned != "/" {
+			result = append(result, cleaned)
+		}
+	}
+	return result
 }
 
 func (h *requestLoggerHandler) Close() error {
@@ -152,10 +182,13 @@ func CloseRequestLogger(handler http.Handler) error {
 var requestSequence uint64
 
 func RequestLogger(next http.Handler) http.Handler {
-	return RequestLoggerTrusted(next, nil)
+	return RequestLoggerWithSkip(next, nil, nil)
 }
 
 func RequestLoggerTrusted(next http.Handler, trusted []*net.IPNet) http.Handler {
+	return RequestLoggerWithSkip(next, trusted, nil)
+}
+func RequestLoggerWithSkip(next http.Handler, trusted []*net.IPNet, skipPaths []string) http.Handler {
 	dir := os.Getenv("LEOXY_LOG_DIR")
 	if dir == "" {
 		dir = "log"
@@ -168,7 +201,7 @@ func RequestLoggerTrusted(next http.Handler, trusted []*net.IPNet) http.Handler 
 		failed:  logFile{path: filepath.Join(dir, "error.log")},
 	}
 
-	return &requestLoggerHandler{next: next, logger: logger, trusted: trusted}
+	return &requestLoggerHandler{next: next, logger: logger, trusted: trusted, skipPaths: normalizeSkipPaths(skipPaths)}
 }
 
 func logEntry(r *http.Request, status int, duration time.Duration, trusted []*net.IPNet) string {

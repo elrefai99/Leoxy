@@ -205,3 +205,10 @@ func TestNormalizePath(t *testing.T) {
 		}
 	}
 }
+func TestValidateRejectsRootSkipPath(t *testing.T) {
+	cfg := config()
+	cfg.Server.Logging.SkipPaths = []string{"/"}
+	if err := Validate(cfg); err == nil {
+		t.Fatal("expected error for root skip path")
+	}
+}

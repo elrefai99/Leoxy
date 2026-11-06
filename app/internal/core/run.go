@@ -59,7 +59,7 @@ func Run() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", health.Ping)
 	mux.HandleFunc("/health/live", health.HealthProxy)
-	mux.Handle("/metrics", http.HandlerFunc(metrics.Handler))
+	mux.Handle("/metrics", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(metrics.Handler)))
 
 	if os.Getenv("LEOXY_PPROF") == "true" {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -138,7 +138,7 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	requestLogger := common.RequestLoggerTrusted(metrics.Middleware(root), trustedProxyCIDRs)
+	requestLogger := common.RequestLoggerWithSkip(metrics.Middleware(root), trustedProxyCIDRs, cfg.Server.Logging.SkipPaths)
 	defer func() {
 		if err := common.CloseRequestLogger(requestLogger); err != nil {
 			log.Printf("close request logger: %v", err)
@@ -312,7 +312,9 @@ func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstre
 	if security.MaxBody <= 0 {
 		security.MaxBody = resource.Body
 	}
-
+	if security.MaxBody <= 0 {
+		security.MaxBody = global.MaxBody
+	}
 	var handler http.Handler = proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted)
 	handler = securitymiddleware.Body(security.MaxBody, handler)
 	secured, err := securitymiddleware.AccessControlWithJWT(

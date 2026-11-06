@@ -18,7 +18,6 @@ func Body(limitMB int, next http.Handler) http.Handler {
 			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
 			return
 		}
-
 		if r.Body == nil || r.Body == http.NoBody || r.ContentLength >= 0 {
 			if r.Body != nil && r.Body != http.NoBody {
 				r.Body = http.MaxBytesReader(w, r.Body, limit)

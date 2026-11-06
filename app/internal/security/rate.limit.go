@@ -61,7 +61,8 @@ func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, ro
 		mutex.Lock()
 		defer mutex.Unlock()
 
-		if now.Sub(lastSweep) >= time.Minute || len(state) >= maxBuckets {
+		const sweepInterval = time.Second
+		if now.Sub(lastSweep) >= sweepInterval && (now.Sub(lastSweep) >= time.Minute || len(state) >= maxBuckets) {
 			for key, current := range state {
 				if now.After(current.fullAt) {
 					delete(state, key)
