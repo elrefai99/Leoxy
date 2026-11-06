@@ -170,3 +170,8 @@ jobs:
     needs: [build, golangci]
     uses: ./.github/workflows/docker.yml
     secrets: inherit
+
+  _docker:
+    needs: build
+    uses: ./.github/workflows/_docker.yml
+    secrets: inherit

@@ -1,0 +1,61 @@
+name: Docker alpine
+
+on:
+     workflow_call:
+
+env:
+     PROJECT_NAME: "leoxy"
+     DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME || secrets.DOKCER_USERNAME }}
+     DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+
+jobs:
+     image-alpine:
+          runs-on: ubuntu-latest
+
+          steps:
+               - name: Checkout code
+                 uses: actions/checkout@v7
+
+               - name: Set up Docker Buildx
+                 uses: docker/setup-buildx-action@v3
+
+               - name: Build Docker image
+                 uses: docker/build-push-action@v6
+                 with:
+                      context: .
+                      file: ./docker/alpine/Dockerfile
+                      push: false
+                      load: true
+                      cache-from: type=gha
+                      cache-to: type=gha,mode=max
+               - name: Build Image Alpine summary
+                 run: |
+                      echo "# . 🦐 elrefai99 projects ." >> $GITHUB_STEP_SUMMARY
+                      echo "## 🐳 Docker Image Build Summary" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "- **Status**: ✅ Completed build image successfully" >> $GITHUB_STEP_SUMMARY
+     image-alpine-windows:
+          runs-on: ubuntu-latest
+
+          steps:
+               - name: Checkout code
+                 uses: actions/checkout@v7
+
+               - name: Set up Docker Buildx
+                 uses: docker/setup-buildx-action@v3
+
+               - name: Build Docker image
+                 uses: docker/build-push-action@v6
+                 with:
+                      context: .
+                      file: ./docker/alpine/windows/Dockerfile.windows
+                      push: false
+                      load: true
+                      cache-from: type=gha
+                      cache-to: type=gha,mode=max
+               - name: Build Image Alpine Windows summary
+                 run: |
+                      echo "# . 🦐 elrefai99 projects ." >> $GITHUB_STEP_SUMMARY
+                      echo "## 🐳 Docker Image Build Summary" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "- **Status**: ✅ Completed build image successfully" >> $GITHUB_STEP_SUMMARY

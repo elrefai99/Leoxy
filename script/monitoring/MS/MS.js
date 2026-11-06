@@ -13,7 +13,7 @@ const header = "Timestamp,PID,ProcessName,WorkingSetMB,PrivateMemoryMB,CpuPercen
 const config = {
      processName: process.argv[2] ?? "leoxy",
      intervalMs: 1000,
-     output: path.resolve(process.argv[3] ?? path.join(here, "./docs/ramMS.csv"))
+     output: path.resolve(process.argv[3] ?? path.join(here, "./reports/ramMS.csv"))
 }
 const logicalCores = os.cpus().length
 const previous = new Map()
