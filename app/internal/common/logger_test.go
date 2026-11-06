@@ -65,22 +65,6 @@ func TestRequestLoggerWritesErrorsToBothLogs(t *testing.T) {
 	}
 }
 
-func TestRequestLoggerSkipsNodeModules(t *testing.T) {
-	t.Chdir(t.TempDir())
-
-	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-
-	req := httptest.NewRequest(http.MethodGet, "/node_modules/app.js", nil)
-	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, req)
-
-	if _, err := os.Stat("log/request.log"); !os.IsNotExist(err) {
-		t.Fatalf("node_modules request should not be logged")
-	}
-}
-
 func TestRequestLoggerAddsRequestIDAndJSONFields(t *testing.T) {
 	t.Chdir(t.TempDir())
 
@@ -137,6 +121,61 @@ func BenchmarkLogFileWrite(b *testing.B) {
 			}
 			b.StopTimer()
 			_ = file.close()
+		})
+	}
+}
+
+func TestRequestLoggerDoesNotSkipByDefault(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	handler := RequestLogger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(func() { _ = CloseRequestLogger(handler) })
+
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/node_modules/x", nil))
+
+	data, err := os.ReadFile("log/request.log")
+	if err != nil {
+		t.Fatalf("read request log: %v", err)
+	}
+	if !strings.Contains(string(data), "/api/node_modules/x") {
+		t.Fatalf("request was not logged: %s", data)
+	}
+}
+
+func TestRequestLoggerSkipPaths(t *testing.T) {
+	tests := []struct {
+		name   string
+		path   string
+		status int
+		logged bool
+	}{
+		{"exact prefix", "/static", http.StatusOK, false},
+		{"nested path", "/static/app.js", http.StatusOK, false},
+		{"traversal is cleaned", "/static/../api", http.StatusOK, true},
+		{"similar prefix is logged", "/staticfoo", http.StatusOK, true},
+		{"unrelated path", "/api", http.StatusOK, true},
+		{"errors are always logged", "/static/missing.js", http.StatusNotFound, true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			handler := RequestLoggerWithSkip(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(test.status)
+			}), nil, []string{"/static"})
+			t.Cleanup(func() { _ = CloseRequestLogger(handler) })
+
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, test.path, nil))
+
+			if response.Header().Get("X-Request-ID") == "" {
+				t.Fatal("request ID missing on skipped or logged request")
+			}
+			_, err := os.Stat("log/request.log")
+			if logged := err == nil; logged != test.logged {
+				t.Fatalf("logged = %v, want %v", logged, test.logged)
+			}
 		})
 	}
 }

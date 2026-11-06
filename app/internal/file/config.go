@@ -71,6 +71,9 @@ type Security struct {
 	TLSKey            string   `mapstructure:"tls_key"`
 	ClientCA          string   `mapstructure:"client_ca"`
 }
+type Logging struct {
+	SkipPaths []string `mapstructure:"skip_paths"`
+}
 
 type ServerConfig struct {
 	Server struct {
@@ -78,6 +81,7 @@ type ServerConfig struct {
 		Port     string   `mapstructure:"port"`
 		Security Security `mapstructure:"security"`
 		Timeout  Timeout  `mapstructure:"timeout"`
+		Logging  Logging  `mapstructure:"logging"`
 	} `mapstructure:"server"`
 	Upstream []Upstream `mapstructure:"upstream"`
 	Watcher  Watcher    `mapstructure:"watcher"`
@@ -187,7 +191,11 @@ func Validate(cfg *ServerConfig) error {
 	var errs []error
 	server := cfg.Server.Security
 	errs = append(errs, validateSecurity("server.security", server)...)
-
+	for _, value := range cfg.Server.Logging.SkipPaths {
+		if NormalizePath(value) == "/" {
+			errs = append(errs, fmt.Errorf("server.logging: skip_paths must not contain %q", value))
+		}
+	}
 	needTLS := server.RequireMTLS
 	paths := map[string]string{}
 	listeners := map[string]string{}

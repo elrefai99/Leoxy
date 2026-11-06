@@ -138,7 +138,7 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	requestLogger := common.RequestLoggerTrusted(metrics.Middleware(root), trustedProxyCIDRs)
+	requestLogger := common.RequestLoggerWithSkip(metrics.Middleware(root), trustedProxyCIDRs, cfg.Server.Logging.SkipPaths)
 	defer func() {
 		if err := common.CloseRequestLogger(requestLogger); err != nil {
 			log.Printf("close request logger: %v", err)
@@ -184,16 +184,24 @@ func Run() {
 }
 
 func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
-	limited := securitymiddleware.RedisTokenBucketRateLimit(
-		security.RedisConnect, security.RedisAddr, security.RedisPassword, security.RedisDB,
-		security.GlobalRateLimit, security.GlobalRateBurst, "leoxy:global", security.RedisFailOpen, protected)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	root := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
 			mux.ServeHTTP(w, r)
 			return
 		}
-		limited.ServeHTTP(w, r)
+		protected.ServeHTTP(w, r)
 	})
+	return securitymiddleware.RedisTokenBucketRateLimit(
+		security.RedisConnect,
+		security.RedisAddr,
+		security.RedisPassword,
+		security.RedisDB,
+		security.GlobalRateLimit,
+		security.GlobalRateBurst,
+		"leoxy:global",
+		security.RedisFailOpen,
+		root,
+	)
 }
 
 func listenAddress(host, port string) string {

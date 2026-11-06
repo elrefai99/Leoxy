@@ -9,6 +9,9 @@
     idle: 60
     request: 60
 
+  logging:
+    skip_paths: ["/assets", "/static"]
+
   security:
     rate_limit: 0
     rate_limit_burst: 0
