@@ -1,5 +1,5 @@
 
-FROM golang:1.27.3-windowsservercore-ltsc2022 AS builder
+FROM --platform=windows/amd64 golang:1.27.3-windowsservercore-ltsc2022 AS builder
 
 WORKDIR C:/app
 
@@ -10,7 +10,7 @@ COPY . .
 
 RUN go build -trimpath -ldflags="-s -w" -o C:/out/leoxy.exe ./app/cli
 
-FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+FROM --platform=windows/amd64 mcr.microsoft.com/windows/nanoserver:ltsc2022
 
 WORKDIR C:/app
 
