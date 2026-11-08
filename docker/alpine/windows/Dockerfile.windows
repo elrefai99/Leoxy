@@ -17,6 +17,6 @@ WORKDIR C:/app
 COPY --from=builder C:/out/leoxy.exe C:/leoxy.exe
 COPY --from=builder C:/app/docs/html C:/app/docs/html
 
-EXPOSE 4444
+EXPOSE 80
 
 ENTRYPOINT ["C:\\leoxy.exe"]

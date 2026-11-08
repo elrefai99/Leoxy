@@ -21,7 +21,7 @@ Keep indentation consistent. `upstream` is a YAML list; each list entry defines 
 ```yaml
 server:
   host: "127.0.0.1"
-  port: "4444"
+  port: "80"
   timeout:
     connect: 5
     read: 30

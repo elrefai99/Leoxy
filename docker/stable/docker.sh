@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 image=${1:?usage: docker.sh <image>}
-port=${SMOKE_PORT:-4444}
+port=${SMOKE_PORT:-80}
 name=leoxy-docker-$$
 url=http://127.0.0.1:$port
 

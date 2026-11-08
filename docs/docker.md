@@ -1,6 +1,6 @@
 # Docker deployment
 
-Leoxy has a multi-stage production Dockerfile at `docker/lx-2/stable/Dockerfile`. It builds the CLI binary, then runs it in Alpine as the unprivileged `leoxy` user. The container exposes port 4444 and has a liveness health check against `/health/live`.
+Leoxy has a multi-stage production Dockerfile at `docker/lx-2/stable/Dockerfile`. It builds the CLI binary, then runs it in Alpine as the unprivileged `leoxy` user. The container exposes port 80 and has a liveness health check against `/health/live`.
 
 ## Build and run the image
 
@@ -9,16 +9,16 @@ From the repository root:
 ```sh
 docker build -f docker/lx-2/stable/Dockerfile -t leoxy:local .
 docker run --rm \
-  -p 4444:4444 \
+  -p 80:80 \
   -v "${PWD}/leoxy:/app/leoxy" \
   leoxy:local
 ```
 
-Leoxy reads `/app/leoxy/leoxy_config.yaml` in this setup. Put the configuration file in the host `leoxy/` directory before starting, or let Leoxy create its default configuration there. The image's `PORT` is 4444. To publish on a different host port, change the left side of the port mapping, for example `-p 8080:4444`.
+Leoxy reads `/app/leoxy/leoxy_config.yaml` in this setup. Put the configuration file in the host `leoxy/` directory before starting, or let Leoxy create its default configuration there. The image's `PORT` is 80. To publish on a different host port, change the left side of the port mapping, for example `-p 8080:80`.
 
 ## Compose deployment
 
-The production Compose definition is `docker/lx-2/stable/docker-compose.yml`. It publishes `${LEOXY_PORT:-4444}:4444`, mounts `./leoxy` at `/app/leoxy`, and mounts a named volume at `/app/log`. It enables restart-on-failure recovery, a read-only root filesystem, a temporary filesystem for `/tmp`, drops Linux capabilities, and sets `no-new-privileges`.
+The production Compose definition is `docker/lx-2/stable/docker-compose.yml`. It publishes `${LEOXY_PORT:-80}:80`, mounts `./leoxy` at `/app/leoxy`, and mounts a named volume at `/app/log`. It enables restart-on-failure recovery, a read-only root filesystem, a temporary filesystem for `/tmp`, drops Linux capabilities, and sets `no-new-privileges`.
 
 To build and start with Compose, use a Compose file whose `build.dockerfile` points to `docker/lx-2/stable/Dockerfile` and whose context is the repository root. The checked-in Compose file currently names `docker/lx-2/Dockerfile`, which is not present in the repository; correct that path in your local deployment definition or build and run the image with the commands above.
 
@@ -31,7 +31,7 @@ docker compose -f docker/lx-2/stable/docker-compose.yml logs -f leoxy
 docker compose -f docker/lx-2/stable/docker-compose.yml down
 ```
 
-Set `LEOXY_PORT` to change the host-side port. The container continues listening on 4444. The Compose health check tests `/health/live`; it confirms the HTTP process responds, not that every upstream is healthy. Use `/health/ready` when you need the upstream readiness result.
+Set `LEOXY_PORT` to change the host-side port. The container continues listening on 80. The Compose health check tests `/health/live`; it confirms the HTTP process responds, not that every upstream is healthy. Use `/health/ready` when you need the upstream readiness result.
 
 ## Configuration, persistence, and secrets
 

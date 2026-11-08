@@ -28,7 +28,7 @@ PIDS+=("$!")
 
 ready=0
 for _ in $(seq 40); do
-     if curl -s -o /dev/null -H "X-API-Key: $KEY" http://127.0.0.1:4444/ping; then
+     if curl -s -o /dev/null -H "X-API-Key: $KEY" http://127.0.0.1:80/ping; then
           ready=1
           break
      fi

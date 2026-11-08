@@ -215,7 +215,7 @@ func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handl
 func listenAddress(host, port string) string {
 	port = strings.TrimSpace(port)
 	if port == "" {
-		port = "4444"
+		port = "80"
 	}
 	if strings.Contains(port, ":") {
 		return port
