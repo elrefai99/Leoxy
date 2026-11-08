@@ -7,6 +7,7 @@
 baseline/
 .agents
 dist
+node_modules
 
 # Logs
 log
@@ -30,3 +31,5 @@ roadmap.md
 tmp
 cross-platform.md
 leoxy
+!test/server/leoxy
+*.env
