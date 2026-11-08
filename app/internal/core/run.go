@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -105,9 +106,13 @@ func Run() {
 				log.Fatalf("invalid stream policy for %q: %v", resource.Name, err)
 			}
 			if protocol == "tcp" {
-				startTCP(&streams, resource, policy, done)
+				if err := startTCP(&streams, resource, policy, done); err != nil {
+					log.Fatalf("start TCP listener for %q: %v", resource.Name, err)
+				}
 			} else {
-				startUDP(&streams, resource, policy, done)
+				if err := startUDP(&streams, resource, policy, done); err != nil {
+					log.Fatalf("start UDP listener for %q: %v", resource.Name, err)
+				}
 			}
 			continue
 		}
@@ -138,7 +143,10 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	requestLogger := common.RequestLoggerWithSkip(metrics.Middleware(root), trustedProxyCIDRs, cfg.Server.Logging.SkipPaths)
+	requestLogger := common.RequestLoggerWithSkip(metrics.MiddlewareWithRoute(root, func(r *http.Request) string {
+		_, pattern := mux.Handler(r)
+		return pattern
+	}), trustedProxyCIDRs, cfg.Server.Logging.SkipPaths)
 	defer func() {
 		if err := common.CloseRequestLogger(requestLogger); err != nil {
 			log.Printf("close request logger: %v", err)
@@ -238,11 +246,10 @@ func buildTLS(sec file.Security) (*tls.Config, error) {
 	return config, nil
 }
 
-func startTCP(streams *sync.WaitGroup, resource file.Upstream, policy *shared.StreamPolicy, done <-chan struct{}) {
+func startTCP(streams *sync.WaitGroup, resource file.Upstream, policy *shared.StreamPolicy, done <-chan struct{}) error {
 	listener, err := net.Listen("tcp", strings.TrimSpace(resource.Listen))
 	if err != nil {
-		log.Printf("TCP listener for %q failed: %v", resource.Name, err)
-		return
+		return fmt.Errorf("listen on %s: %w", resource.Listen, err)
 	}
 	target := strings.TrimSpace(resource.ServerURL)
 	streams.Add(1)
@@ -253,18 +260,17 @@ func startTCP(streams *sync.WaitGroup, resource file.Upstream, policy *shared.St
 			log.Printf("TCP proxy %q stopped: %v", resource.Name, err)
 		}
 	}()
+	return nil
 }
 
-func startUDP(streams *sync.WaitGroup, resource file.Upstream, policy *shared.StreamPolicy, done <-chan struct{}) {
+func startUDP(streams *sync.WaitGroup, resource file.Upstream, policy *shared.StreamPolicy, done <-chan struct{}) error {
 	addr, err := net.ResolveUDPAddr("udp", strings.TrimSpace(resource.Listen))
 	if err != nil {
-		log.Printf("invalid UDP listen address for %q: %v", resource.Name, err)
-		return
+		return fmt.Errorf("resolve listen address %s: %w", resource.Listen, err)
 	}
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Printf("UDP listener for %q failed: %v", resource.Name, err)
-		return
+		return fmt.Errorf("listen on %s: %w", resource.Listen, err)
 	}
 	target := strings.TrimSpace(resource.ServerURL)
 	streams.Add(1)
@@ -275,6 +281,7 @@ func startUDP(streams *sync.WaitGroup, resource file.Upstream, policy *shared.St
 			log.Printf("UDP proxy %q stopped: %v", resource.Name, err)
 		}
 	}()
+	return nil
 }
 
 func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstream, defaultTrusted []*net.IPNet) []*url.URL {

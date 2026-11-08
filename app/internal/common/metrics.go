@@ -29,6 +29,10 @@ func NewMetrics() *Metrics {
 }
 
 func (metrics *Metrics) Middleware(next http.Handler) http.Handler {
+	return metrics.MiddlewareWithRoute(next, func(r *http.Request) string { return r.Pattern })
+}
+
+func (metrics *Metrics) MiddlewareWithRoute(next http.Handler, routeFor func(*http.Request) string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
 		writer := &statusWriter{ResponseWriter: w}
@@ -39,7 +43,7 @@ func (metrics *Metrics) Middleware(next http.Handler) http.Handler {
 			status = http.StatusOK
 		}
 		metrics.mutex.Lock()
-		route := r.Pattern
+		route := routeFor(r)
 		if route == "" {
 			route = "unmatched"
 		}

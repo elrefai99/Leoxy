@@ -76,10 +76,7 @@ func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, ro
 			current, ok := state[keys[i]]
 			if !ok {
 				if len(state) >= maxBuckets {
-					for key := range state {
-						delete(state, key)
-						break
-					}
+					return false
 				}
 				current = bucket{tokens: float64(l.burst), updated: now}
 			}
