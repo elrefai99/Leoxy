@@ -1,5 +1,5 @@
 server:
-  port: "4444"
+  port: "80"
   security:
     max_body: 0
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
