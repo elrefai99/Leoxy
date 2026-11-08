@@ -40,7 +40,7 @@ The configuration is YAML with `server`, `upstream`, and optional `watcher` sect
 ```yaml
 server:
   host: "127.0.0.1"
-  port: "4444"
+  port: "80"
 
 upstream:
   - name: "API"
@@ -70,5 +70,5 @@ Security settings can be applied globally under `server.security` and per HTTP u
 
 ## Docker
 
-For the container image and Compose setup, see [Docker deployment](docker.md). The container uses port 4444 by default and keeps its configuration and logs in mounted data locations.
+For the container image and Compose setup, see [Docker deployment](docker.md). The container uses port 80 by default and keeps its configuration and logs in mounted data locations.
 

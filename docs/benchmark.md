@@ -8,7 +8,7 @@ Run from the repository root:
 
 ```sh
 go run ./test/benchmark/cmd \
-  -url http://localhost:4444/api \
+  -url http://localhost:80/api \
   -duration 30s \
   -concurrency 100
 ```
@@ -18,7 +18,7 @@ The benchmark module can also be built separately:
 ```sh
 cd test/benchmark
 go build -o bench ./cmd
-./bench -url http://localhost:4444/api -duration 30s -concurrency 100
+./bench -url http://localhost:80/api -duration 30s -concurrency 100
 ```
 
 `-url`, `-duration`, and `-concurrency` are required. The test ends when its duration expires or its optional request limit is reached.
@@ -44,7 +44,7 @@ Example with a POST request, authentication header, fixed request count, and pro
 
 ```sh
 go run ./test/benchmark/cmd \
-  -url http://localhost:4444/api/items \
+  -url http://localhost:80/api/items \
   -method POST \
   -body '{"name":"sample"}' \
   -header 'Content-Type: application/json' \
@@ -52,7 +52,7 @@ go run ./test/benchmark/cmd \
   -duration 1m \
   -request 50000 \
   -concurrency 50 \
-  -pprof http://localhost:4444/debug/pprof/heap \
+  -pprof http://localhost:80/debug/pprof/heap \
   -profile-out ./heap.pb.gz
 ```
 

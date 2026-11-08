@@ -20,7 +20,7 @@ Client -> Leoxy -> Application servers
 
 ```bash
 docker pull mohamed0699/leoxy:latest
-docker run --rm -p 4444:4444 -v "${PWD}/leoxy:/app/leoxy" mohamed0699/leoxy:latest
+docker run --rm -p 80:80 -v "${PWD}/leoxy:/app/leoxy" mohamed0699/leoxy:latest
 ```
 
 ### Using Docker Compose
@@ -30,7 +30,7 @@ services:
   leoxy:
     image: mohamed0699/leoxy:latest
     ports:
-      - "4444:4444"
+      - "80:80"
     volumes:
       - ./leoxy:/app/leoxy
     restart: unless-stopped
@@ -55,7 +55,7 @@ Leoxy reads configuration from `leoxy/leoxy_config.yaml`. On first start, a defa
 
 ```yaml
 server:
-  port: "4444"
+  port: "80"
   security:
     global_rate_limit: 10000
     global_rate_burst: 1000

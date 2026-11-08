@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -220,6 +221,19 @@ func Validate(cfg *ServerConfig) error {
 			listeners[key] = name
 			errs = append(errs, validateSecurity("upstream "+name, upstream.Security)...)
 		case "", "http", "https", "http2", "graphql", "websocket":
+			serverURLs := upstream.Servers
+			if len(serverURLs) == 0 && strings.TrimSpace(upstream.ServerURL) != "" {
+				serverURLs = []string{upstream.ServerURL}
+			}
+			if len(serverURLs) == 0 {
+				errs = append(errs, fmt.Errorf("upstream %q: at least one server_url or servers entry is required", name))
+			}
+			for serverIndex, value := range serverURLs {
+				target, err := url.Parse(strings.TrimSpace(value))
+				if err != nil || (target.Scheme != "http" && target.Scheme != "https") || target.Host == "" || target.Opaque != "" {
+					errs = append(errs, fmt.Errorf("upstream %q: server URL #%d must be an absolute http or https URL with a host", name, serverIndex+1))
+				}
+			}
 			path := NormalizePath(upstream.Path)
 			if strings.ContainsAny(path, " \t\r\n{}") {
 				errs = append(errs, fmt.Errorf("upstream %q: path %q contains unsupported characters", name, path))

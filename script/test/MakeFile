@@ -16,7 +16,7 @@ endif
 OUTPUT := $(DIST)/leoxy-$(GOOS)-$(ARCH)$(EXT)
 
 TEST_DIR := script/test
-BENCH_URL ?= http://127.0.0.1:4444/ping
+BENCH_URL ?= http://127.0.0.1:80/ping
 BENCH_DURATION ?= 10s
 BENCH_CONCURRENCY ?= 50
 

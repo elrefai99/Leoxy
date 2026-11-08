@@ -35,24 +35,14 @@ jobs:
                       echo "" >> $GITHUB_STEP_SUMMARY
                       echo "- **Status**: ✅ Completed build image successfully" >> $GITHUB_STEP_SUMMARY
      image-alpine-windows:
-          runs-on: ubuntu-latest
+          runs-on: windows-2022
 
           steps:
                - name: Checkout code
                  uses: actions/checkout@v7
 
-               - name: Set up Docker Buildx
-                 uses: docker/setup-buildx-action@v3
-
                - name: Build Docker image
-                 uses: docker/build-push-action@v6
-                 with:
-                      context: .
-                      file: ./docker/alpine/windows/Dockerfile.windows
-                      push: false
-                      load: true
-                      cache-from: type=gha
-                      cache-to: type=gha,mode=max
+                 run: docker build --file ./docker/alpine/windows/Dockerfile.windows --tag leoxy:windows .
                - name: Build Image Alpine Windows summary
                  run: |
                       echo "# . 🦐 elrefai99 projects ." >> $GITHUB_STEP_SUMMARY

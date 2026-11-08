@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:4444}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:80}"
 EP1="${EP1:-/api/test}"
 EP2="${EP2:-/}"
 EP3="${EP3:-/health/ready}"

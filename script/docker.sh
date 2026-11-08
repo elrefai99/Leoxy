@@ -1,38 +1,52 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-cd "$(dirname "$0")/.."
+image=${1:?usage: docker.sh <image>}
+port=${SMOKE_PORT:-80}
+nameDocker=leoxy-docker-$$
+namePodman=leoxy-podman-$$
+url=http://127.0.0.1:$port
 
-COMPOSE="docker compose -f docker/lx-2/docker-compose.yml"
-URL="127.0.0.1:4444"
+cleanup() { docker rm -f "$name" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+fail() { echo "FAIL: $*" >&2; docker logs "$name" >&2 || true; exit 1; }
+code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 
-case "${1:-help}" in
-     build)
-          $COMPOSE build
-     ;;
-     up)
-          $COMPOSE up -d --build
-          $COMPOSE ps
-     ;;
-     down)
-          $COMPOSE down
-     ;;
-     restart)
-          $COMPOSE restart
-     ;;
-     logs)
-          $COMPOSE logs -f leoxy
-     ;;
-     status)
-          $COMPOSE ps
-     ;;
-     health)
-          $COMPOSE exec leoxy wget -q -O - "http://${URL}/health/live"
-     ;;
-     clean)
-          $COMPOSE down --rmi local
-     ;;
-     help|*)
-          echo "Usage: ./script/docker.sh {build|up|down|restart|logs|status|health|clean}"
-     ;;
-esac
+docker run -d --name "$name" --health-interval=2s -p "127.0.0.1:$port:80" \
+	-e PORT=80 -e LEOXY_HOST=0.0.0.0 "$image" >/dev/null
+
+status=starting
+for _ in {1..60}; do
+	status=$(docker inspect -f '{{.State.Health.Status}}' "$name" 2>/dev/null || true)
+	[ "$status" = healthy ] && break
+	sleep 1
+done
+[ "$status" = healthy ] || fail "health status is $status"
+
+[ "$(code "$url/health/live")" = 200 ] || fail "health endpoint did not return 200"
+[ "$(curl -fsS "$url/ping")" = PONG ] || fail "ping endpoint did not return PONG"
+[ "$(docker exec "$name" id -u)" != 0 ] || fail "container should not run as root"
+
+echo "Docker work"
+
+cleanup() { podman rm -f "$name" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+fail() { echo "FAIL: $*" >&2; podman logs "$name" >&2 || true; exit 1; }
+code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+
+podman run -d --name "$name" --health-interval=2s -p "127.0.0.1:$port:80" \
+	-e PORT=80 -e LEOXY_HOST=0.0.0.0 "$image" >/dev/null
+
+status=starting
+for _ in {1..60}; do
+	status=$(podman inspect -f '{{.State.Health.Status}}' "$name" 2>/dev/null || true)
+	[ "$status" = healthy ] && break
+	sleep 1
+done
+[ "$status" = healthy ] || fail "health status is $status"
+
+[ "$(code "$url/health/live")" = 200 ] || fail "health endpoint did not return 200"
+[ "$(curl -fsS "$url/ping")" = PONG ] || fail "ping endpoint did not return PONG"
+[ "$(podman exec "$name" id -u)" != 0 ] || fail "container should not run as root"
+
+echo "Podman work"

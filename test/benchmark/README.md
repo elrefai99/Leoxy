@@ -14,10 +14,10 @@ This tool is only for benchmarking Leoxy. It generates load against a target Leo
 
 ```bash
 go run ./tools/cmd \
-  -url http://localhost:4444/api/test \
+  -url http://localhost:80/api/test \
   -duration 30s \
   -concurrency 100 \
-  -pprof http://localhost:4444/debug/pprof/heap \
+  -pprof http://localhost:80/debug/pprof/heap \
   -profile-out docs/leoxy-heap.txt
 ```
 
