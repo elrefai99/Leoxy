@@ -1,8 +1,8 @@
 services:
   leoxy:
     build:
-      context: ../../..
-      dockerfile: docker/lx-2/stable/Dockerfile
+      context: ../..
+      dockerfile: docker/stable/Dockerfile
 
     image: ghcr.io/mohamed0699/leoxy:latest
     restart: unless-stopped
