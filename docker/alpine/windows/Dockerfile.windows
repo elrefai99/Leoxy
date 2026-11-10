@@ -13,7 +13,8 @@ RUN go mod download
 
 COPY . .
 
-RUN New-Item -ItemType Directory -Force C:/out | Out-Null; go build -trimpath -ldflags=\"-s -w\" -o C:/out/leoxy.exe ./app/cli
+WORKDIR C:/app/app
+RUN New-Item -ItemType Directory -Force C:/out | Out-Null; go build -trimpath -ldflags=\"-s -w\" -o C:/out/leoxy.exe ./cli
 
 FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
 

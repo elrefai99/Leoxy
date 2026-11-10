@@ -49,3 +49,21 @@ jobs:
                       echo "## 🐳 Docker Image Build Summary" >> $GITHUB_STEP_SUMMARY
                       echo "" >> $GITHUB_STEP_SUMMARY
                       echo "- **Status**: ✅ Completed build image successfully" >> $GITHUB_STEP_SUMMARY
+     verify:
+          runs-on: ubuntu-latest
+          steps:
+               - uses: actions/checkout@v7
+               - uses: docker/setup-buildx-action@v3
+               - name: Validate Compose
+                 run: docker compose -f docker/stable/docker-compose.yml config --quiet
+               - name: Build image
+                 uses: docker/build-push-action@v6
+                 with:
+                      context: .
+                      file: docker/stable/Dockerfile
+                      load: true
+                      tags: leoxy:ci
+                      cache-from: type=gha
+                      cache-to: type=gha,mode=max
+               - name: Smoke test
+                 run: bash docker/stable/docker.sh leoxy:ci
