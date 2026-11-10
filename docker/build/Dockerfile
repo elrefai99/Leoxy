@@ -8,8 +8,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git make gcc libc6-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd -g 1001 leoxybuild \
-    && useradd -m -u 1001 -g 1001 -s /bin/bash leoxybuild
+RUN groupadd -g 1000 leoxybuild \
+    && useradd -m -u 1000 -g 1000 -s /bin/bash leoxybuild
 
 WORKDIR /workspace
 
