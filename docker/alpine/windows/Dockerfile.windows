@@ -1,21 +1,29 @@
+# escape=`
+ARG GO_VERSION=1.27.3
+FROM golang:${GO_VERSION}-windowsservercore-ltsc2022 AS builder
 
-FROM golang:1.27.3-windowsservercore-ltsc2022 AS builder
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-WORKDIR C:/app
+ENV CGO_ENABLED=0 GOWORK=off
+
+WORKDIR C:\src\app
 
 COPY app/go.mod app/go.sum ./
+
 RUN go mod download
 
-COPY . .
+COPY app/ ./
 
-RUN New-Item -ItemType Directory -Force C:/out | Out-Null; go build -trimpath -ldflags=\"-s -w\" -o C:/out/leoxy.exe ./app/cli
+RUN New-Item -ItemType Directory -Force C:\out | Out-Null; go build -trimpath -ldflags '-s -w' -o C:\out\leoxy.exe .\cli
 
 FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
 
-WORKDIR C:/app
+ENV LEOXY_HOST=0.0.0.0 PORT=80
 
-COPY --from=builder C:/out/leoxy.exe C:/leoxy.exe
-COPY --from=builder C:/app/docs/html C:/app/docs/html
+WORKDIR C:\app
+
+COPY --from=builder C:\out\leoxy.exe C:\leoxy.exe
+COPY docs/html C:\app\docs\html
 
 EXPOSE 80
 
