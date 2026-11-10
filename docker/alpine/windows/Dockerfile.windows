@@ -6,24 +6,23 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 
 ENV CGO_ENABLED=0 GOWORK=off
 
-WORKDIR C:\src\app
+WORKDIR C:/app
 
 COPY app/go.mod app/go.sum ./
-
 RUN go mod download
 
-COPY app/ ./
+COPY . .
 
-RUN New-Item -ItemType Directory -Force C:\out | Out-Null; go build -trimpath -ldflags '-s -w' -o C:\out\leoxy.exe .\cli
+RUN New-Item -ItemType Directory -Force C:/out | Out-Null; go build -trimpath -ldflags=\"-s -w\" -o C:/out/leoxy.exe ./app/cli
 
 FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
 
 ENV LEOXY_HOST=0.0.0.0 PORT=80
 
-WORKDIR C:\app
+WORKDIR C:/app
 
-COPY --from=builder C:\out\leoxy.exe C:\leoxy.exe
-COPY docs/html C:\app\docs\html
+COPY --from=builder C:/out/leoxy.exe C:/leoxy.exe
+COPY --from=builder C:/app/docs/html C:/app/docs/html
 
 EXPOSE 80
 
