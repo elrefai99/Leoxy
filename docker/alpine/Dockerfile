@@ -10,7 +10,8 @@ RUN go mod download
 WORKDIR /app
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/leoxy ./app/cli
+WORKDIR /app/app
+RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/leoxy ./cli
 
 FROM golang:${GO_VERSION}
 

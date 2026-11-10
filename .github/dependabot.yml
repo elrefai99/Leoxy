@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: gomod
-    directory: /tools
+    directory: /test/benchmark
     schedule:
       interval: weekly
   - package-ecosystem: github-actions
@@ -13,6 +13,18 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: docker
-    directory: /docker/lx-2
+    directory: /docker/stable
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /docker/build
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /docker/alpine/windows
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker-compose
+    directory: /docker/stable
     schedule:
       interval: weekly

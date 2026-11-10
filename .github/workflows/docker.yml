@@ -61,75 +61,51 @@ jobs:
     needs: [image, compose]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
-          fetch-depth: 0
-
-      - name: Read image version
-        id: image-version
+          fetch-depth: 2
+      - name: Decide
+        id: meta
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
         run: |
           version=$(jq -r '.version' version.json)
-          previous_version=$(git show "${GITHUB_SHA}^:version.json" 2>/dev/null | jq -r '.version' || true)
+          previous=$(git show "${GITHUB_SHA}^:version.json" 2>/dev/null | jq -r '.version' || true)
+          push=false
+          if [ "$version" != "$previous" ] && [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_ACCESS_TOKEN" ]; then
+            push=true
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if [ "$version" != "$previous_version" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Check DockerHub credentials
-        id: check-dockerhub
-        run: |
-          if [ "${{ steps.image-version.outputs.changed }}" != "true" ]; then
-            echo "Image version unchanged - will build only (no push)"
-            echo "push=false" >> $GITHUB_OUTPUT
-            echo "reason=Image version unchanged" >> $GITHUB_OUTPUT
-          elif [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_ACCESS_TOKEN" ]; then
-            echo "DockerHub credentials found - will push image"
-            echo "push=true" >> $GITHUB_OUTPUT
-            echo "reason=Push enabled" >> $GITHUB_OUTPUT
-          else
-            echo "No DockerHub credentials - will build only (no push)"
-            echo "push=false" >> $GITHUB_OUTPUT
-            echo "reason=credentials not configured" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Log in to DockerHub
-        if: steps.check-dockerhub.outputs.push == 'true'
-        uses: docker/login-action@v2
+          echo "push=$push" >> "$GITHUB_OUTPUT"
+      - if: steps.meta.outputs.push == 'true'
+        uses: docker/setup-qemu-action@v3
+      - if: steps.meta.outputs.push == 'true'
+        uses: docker/setup-buildx-action@v3
+      - if: steps.meta.outputs.push == 'true'
+        uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_ACCESS_TOKEN }}
-
-      - name: Build and push Docker image
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+      - if: steps.meta.outputs.push == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/stable/Dockerfile
-          push: ${{ steps.check-dockerhub.outputs.push }}
-          load: ${{ steps.check-dockerhub.outputs.push != 'true' }}
+          file: docker/stable/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
           tags: |
-            ${{ steps.check-dockerhub.outputs.push == 'true' && format('{0}/{1}:latest', env.DOCKER_USERNAME, env.PROJECT_NAME) || format('{0}:local', env.PROJECT_NAME) }}
-            ${{ steps.check-dockerhub.outputs.push == 'true' && format('{0}/{1}:{2}', env.DOCKER_USERNAME, env.PROJECT_NAME, steps.image-version.outputs.version) || format('{0}:{1}', env.PROJECT_NAME, steps.image-version.outputs.version) }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.meta.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:${{ github.sha }}
+          build-args: |
+            LEOXY_VERSION=${{ steps.meta.outputs.version }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            BUILD_DATE=${{ github.event.head_commit.timestamp }}
-            VCS_REF=${{ github.sha }}
-
-      - name: Build summary
+      - name: Summary
         run: |
-          echo "# . 🦐 elrefai99 projects ." >> $GITHUB_STEP_SUMMARY
-          echo "## 🐳 Docker Hub Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Push to DockerHub**: ${{ steps.check-dockerhub.outputs.push == 'true' && 'Yes' || format('No ({0})', steps.check-dockerhub.outputs.reason) }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit SHA**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check-dockerhub.outputs.push }}" == "true" ]; then
-            echo "- **Image Tags**: \`$DOCKER_USERNAME/$PROJECT_NAME:latest\`, \`$DOCKER_USERNAME/$PROJECT_NAME:${{ github.sha }}\`, \`$DOCKER_USERNAME/$PROJECT_NAME:${{ steps.image-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Image Tags**: \`$PROJECT_NAME:local\`, \`$PROJECT_NAME:${{ github.sha }}\`, \`$PROJECT_NAME:${{ steps.image-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "## Docker Hub" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Pushed: ${{ steps.meta.outputs.push }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version: ${{ steps.meta.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"

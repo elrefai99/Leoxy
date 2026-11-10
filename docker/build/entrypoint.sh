@@ -1,26 +1,25 @@
-
 #!/usr/bin/env bash
-
 set -Eeuo pipefail
 
-echo "==> Verifying Go modules"
-go mod verify
+export GOWORK=off
 
-echo "==> Checking formatting"
-if [ -n "$(gofmt -l .)" ]; then
-    gofmt -l .
-    echo "Formatting check failed"
-    exit 1
-fi
-
-echo "==> Running go vet"
-go vet ./...
-
-echo "==> Running tests with race detection"
-go test -race ./...
+for module in app test/benchmark; do
+    echo "==> $module"
+    pushd "$module" >/dev/null
+    go mod verify
+    if [ -n "$(gofmt -l .)" ]; then
+        gofmt -l .
+        echo "Formatting check failed"
+        exit 1
+    fi
+    go vet ./...
+    CGO_ENABLED=1 go test -race ./...
+    popd >/dev/null
+done
 
 echo "==> Building Leoxy"
 mkdir -p dist
-CGO_ENABLED=1 go build -trimpath -o dist/leoxy ./app/cli
+
+(cd app && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../dist/leoxy ./cli)
 
 echo "==> CI completed successfully"
