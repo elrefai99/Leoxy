@@ -33,6 +33,96 @@ docker compose -f docker/lx-2/stable/docker-compose.yml down
 
 Set `LEOXY_PORT` to change the host-side port. The container continues listening on 80. The Compose health check tests `/health/live`; it confirms the HTTP process responds, not that every upstream is healthy. Use `/health/ready` when you need the upstream readiness result.
 
+## Docker networking and upstream services
+
+When Leoxy runs inside a container, `localhost` and `127.0.0.1` refer to the Leoxy container's own network namespace.
+
+The correct upstream address depends on where the application is running.
+
+### Option 1: Upstream running on the Docker host
+
+If your backend runs directly on the host machine, use `host.docker.internal`.
+
+Example Leoxy configuration:
+
+```yaml
+upstream:
+  - name: "Backend"
+    protocol: "http"
+    path: "/api"
+    server_url: "http://host.docker.internal:9000"
+```
+
+Docker Desktop supports `host.docker.internal` on Windows and macOS.
+
+For Linux Docker Engine, add the host gateway mapping:
+
+```yaml
+services:
+  leoxy:
+    image: mohamed0699/leoxy:latest
+    ports:
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./leoxy:/app/leoxy
+```
+
+The host application must listen on a reachable interface such as `0.0.0.0`, and the host firewall must allow the connection.
+
+### Option 2: Upstream running in another container
+
+When Leoxy and the backend run through Docker Compose, use the backend service name as the upstream hostname.
+
+Example Compose configuration:
+
+```yaml
+services:
+  leoxy:
+    image: mohamed0699/leoxy:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./leoxy:/app/leoxy
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    expose:
+      - "9000"
+    restart: unless-stopped
+```
+
+Leoxy configuration:
+
+```yaml
+upstream:
+  - name: "Backend"
+    protocol: "http"
+    path: "/api"
+    server_url: "http://backend:9000"
+```
+
+Docker Compose automatically provides service discovery between containers on the same network.
+
+The backend does not need a published host port for Leoxy to reach it. The `expose` declaration is optional and documents the internal application port.
+
+### Troubleshooting
+
+If an upstream connection fails:
+
+1. Verify that the backend is running and listening on the expected port.
+2. Verify that the backend listens on a reachable interface.
+3. Check that both containers share a Docker network.
+4. Use the Compose service name instead of `localhost` for container-to-container communication.
+5. Use `host.docker.internal` for host-based applications.
+6. Check firewall rules and container logs.
+
+Remember that `depends_on` controls startup order but does not guarantee that the backend is ready to accept connections.
+
 ## Configuration, persistence, and secrets
 
 Mount the directory containing `leoxy_config.yaml` at `/app/leoxy` so configuration survives container replacement. The current watcher and background CLI use `leoxy/log` relative to the container working directory (`/app`), so their default output is under `/app/leoxy/log`; the Compose volume at `/app/log` does not cover that default path. Mount or redirect the actual data directory if reports and logs need to persist. With `docker run`, a host mount at `/app/leoxy` also persists the default logs and watcher reports alongside the config.

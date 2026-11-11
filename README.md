@@ -40,6 +40,79 @@ services:
 docker compose up -d
 ```
 
+
+### Docker Networking
+
+When Leoxy runs inside a Docker container, `localhost` refers to the Leoxy container itself, not the Docker host or other containers.
+
+Choose the upstream address based on where your application is running.
+
+#### Applications running on the host machine
+
+Use `host.docker.internal` to reach services running directly on your host:
+
+```yaml
+upstream:
+  - name: "Backend"
+    protocol: "http"
+    path: "/api"
+    server_url: "http://host.docker.internal:9000"
+```
+
+On Linux Docker Engine, add the host gateway mapping:
+
+```yaml
+services:
+  leoxy:
+    image: mohamed0699/leoxy:latest
+    ports:
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+The backend must listen on `0.0.0.0` rather than `127.0.0.1` to accept connections from the container.
+
+#### Applications running in Docker Compose
+
+Use the application service name as the hostname. Docker Compose provides DNS-based service discovery between containers on the same network.
+
+```yaml
+services:
+  leoxy:
+    image: mohamed0699/leoxy:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./leoxy:/app/leoxy
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    expose:
+      - "9000"
+    restart: unless-stopped
+```
+
+Configure Leoxy to use the backend service name:
+
+```yaml
+upstream:
+  - name: "Backend"
+    protocol: "http"
+    path: "/api"
+    server_url: "http://backend:9000"
+```
+
+**Important:**
+- `localhost` refers to the current container.
+- `host.docker.internal` refers to the Docker host.
+- `backend` refers to another service on the same Compose network.
+- Both containers must share a Docker network to communicate.
+- Container-to-container communication uses the container port, not the published host port.
+
 ### Building from source
 
 ```bash
