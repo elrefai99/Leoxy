@@ -110,7 +110,7 @@ app.get("/api/user/all", async (req, res) => {
      }
 })
 
-const PORT = Number(process.env.PORT) || 9999
+const PORT = Number(process.env.PORT) || 9000
 
 async function startServer() {
      try {

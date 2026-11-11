@@ -56,7 +56,7 @@ upstream:
     listen: ""
     path: "/api"
     ip: true
-    server_url: ""
+    server_url: "http://localhost:9000"
     servers:
       - "http://localhost:60459"
       - "http://localhost:60460"

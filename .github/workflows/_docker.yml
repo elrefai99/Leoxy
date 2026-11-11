@@ -41,6 +41,10 @@ jobs:
                - name: Checkout code
                  uses: actions/checkout@v7
 
+               - name: Start Docker service
+                 run: Start-Service docker
+                 shell: powershell
+
                - name: Build Docker image
                  run: docker build --file ./docker/alpine/windows/Dockerfile.windows --tag leoxy:windows .
                - name: Build Image Alpine Windows summary

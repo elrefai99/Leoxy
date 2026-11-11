@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-ARG GO_VERSION=1.27.3
+ARG GO_VERSION=1.27.4
 FROM golang:${GO_VERSION}-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive GOFLAGS=-buildvcs=false

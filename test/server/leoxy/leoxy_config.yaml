@@ -1,5 +1,5 @@
 server:
-  host: "127.0.0.1"
+  host: "0.0.0.0"
   port: "80"
 
   timeout:
@@ -38,7 +38,7 @@ upstream:
     ip: true
     body: 10
     servers:
-      - "http://localhost:9000"
+      - "http://node:9000"
     security:
       rate_limit: 1000
       rate_limit_burst: 500

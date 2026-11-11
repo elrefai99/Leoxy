@@ -6,7 +6,7 @@ services:
       context: ../..
       dockerfile: docker/stable/Dockerfile
       args:
-        LEOXY_VERSION: ${LEOXY_VERSION:-1.14.3}
+        LEOXY_VERSION: ${LEOXY_VERSION:-1.14.4}
     image: ${LEOXY_IMAGE:-mohamed0699/leoxy}:${LEOXY_TAG:-latest}
     user: "${LEOXY_UID:-10001}:${LEOXY_GID:-10001}"
     restart: unless-stopped

@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
-ARG GO_VERSION=1.27.3
+ARG GO_VERSION=1.27.4
 ARG ALPINE_VERSION=3.22
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
-ARG LEOXY_VERSION=1.14.3
+ARG LEOXY_VERSION=1.14.4
 ENV CGO_ENABLED=0 GOWORK=off
 
 WORKDIR /src/app
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 FROM alpine:${ALPINE_VERSION}
 
-ARG LEOXY_VERSION=1.14.3
+ARG LEOXY_VERSION=1.14.4
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 
