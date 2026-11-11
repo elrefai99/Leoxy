@@ -1,6 +1,5 @@
 # escape=`
-ARG GO_VERSION=1.27.3
-FROM golang:${GO_VERSION}-windowsservercore-ltsc2022 AS builder
+ARG GO_VERSION=1.27.4FROM golang:${GO_VERSION}-windowsservercore-ltsc2022 AS builder
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
