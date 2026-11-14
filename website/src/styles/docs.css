@@ -14,6 +14,10 @@
      --sl-color-gray-5: #262626;
      --sl-color-gray-6: #0a0a0a;
      --sl-color-black: #000;
+     --sl-color-bg-sidebar: #101012;
+     --sl-color-bg-nav: #101012;
+     --sl-color-text-accent: #fff;
+     --sl-color-text-invert: #fff;
      --sl-font: 'Inter Variable', Inter, Arial, sans-serif;
      --sl-font-mono: 'JetBrains Mono Variable', monospace;
      --sl-content-width: 52rem;
@@ -89,6 +93,46 @@ header.header {
 
 .right-sidebar {
      border-inline-start: 1px solid #262626
+}
+
+.sidebar-pane {
+     background: #101012;
+     border-inline-end: 1px solid #262626
+}
+
+.sidebar-content .top-level > li + li {
+     margin-top: 4px
+}
+
+.sidebar-content .top-level a {
+     display: flex;
+     min-height: 44px;
+     align-items: center;
+     border-radius: 10px;
+     padding: 8px;
+     color: #a3a3a3;
+     font: 500 14px/20px 'JetBrains Mono Variable', monospace
+}
+
+.sidebar-content .top-level a:hover {
+     background: #18181b;
+     color: #fff
+}
+
+.sidebar-content .top-level a[aria-current='page'],
+.sidebar-content .top-level a[aria-current='page']:hover,
+.sidebar-content .top-level a[aria-current='page']:focus {
+     background: #262626;
+     color: #fff
+}
+
+.right-sidebar-panel h2,
+.right-sidebar-panel nav a {
+     text-align: center
+}
+
+.right-sidebar-panel starlight-toc nav a[aria-current='true'] {
+     color: #fff !important
 }
 
 .sidebar-content a {

@@ -22,8 +22,8 @@ const applicationJsonLd = {
     <section class="hero wrap" aria-labelledby="hero-title">
       <div class="hero-copy">
         <span class="eyebrow">
-          <span>1.14.4</span>
-           proxy
+          <span class="mr-2">Version</span>
+           1.14.4
           </span>
         <h1 id="hero-title">
           Route everything.
@@ -38,10 +38,20 @@ const applicationJsonLd = {
       </div>
       <div class="hero-mark"><Logo /></div>
     </section>
-    <section class="wrap terminal" aria-label="Get started command">
-      <p class="terminal-label"># get started</p>
-      <pre><code>docker pull mohamed0699/leoxy:latest
-  docker run --rm -p 80:80 -v "$PWD/leoxy:/app/leoxy" mohamed0699/leoxy:latest</code></pre>
+    <section class="wrap terminal relative overflow-hidden rounded-sm border-black bg-black p-0" aria-label="Get started commands">
+      <div class="flex h-11 items-center justify-between border-b border-black bg-black pl-4">
+        <div class="flex items-center gap-1.5" aria-hidden="true">
+        </div>
+        <span class="sr-only" data-copy-status aria-live="polite"></span>
+        <button class="flex h-11 w-11 items-center justify-center border-0 bg-black text-muted transition-colors hover:bg-black hover:text-white focus-visible:z-10 focus-visible:text-white focus-visible:outline-none" type="button" data-copy-commands aria-label="Copy Docker commands" title="Copy commands">
+          <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-icon="lucide:copy">
+            <rect width="14" height="14" x="8" y="8" rx="2" />
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2" />
+          </svg>
+        </button>
+      </div>
+      <pre class="m-0 overflow-x-auto whitespace-pre px-4 py-3 font-mono text-[13px] leading-6 text-[#d4d4d4]"><code id="docker-commands"><span class="text-[#60a5fa]">docker pull</span>{' '}<span class="text-[#fbbf24]">mohamed0699/leoxy:latest</span>
+<span class="text-[#60a5fa]">docker run</span>{' '}<span class="text-[#93c5fd]">--rm -p 80:80 -v</span>{' '}&quot;<span class="text-[#fbbf24]">$PWD/leoxy:/app/leoxy</span>&quot;{' '}<span class="text-[#fbbf24]">mohamed0699/leoxy:latest</span></code></pre>
     </section>
     <section class="wrap feature-preview" aria-labelledby="features-title">
       <div class="section-intro">
@@ -97,71 +107,20 @@ const applicationJsonLd = {
     </section>
   </main>
 </BaseLayout>
-<style>
-  .feature-preview{
-    padding-bottom:100px
-  }
-  .feature-preview .section-intro{
-    margin-bottom:28px
-  }
-  .feature-preview .section-intro h2{
-    font-size:40px;
-    line-height:1.15;
-    letter-spacing:-.025em;
-    color:var(--text);
-    margin:18px 0 8px
-  }
-  .feature-preview .section-intro p{
-    color:var(--muted);
-    font-size:18px
-  }
-  .preview-cards{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:16px;
-    margin-bottom:20px
-  }
-  .preview-cards article{padding:24px;background:var(--panel);border:1px solid var(--border);border-radius:14px;min-height:210px}
-  .preview-cards article>span{
-    font:14px 'JetBrains Mono Variable',monospace;
-    color:var(--label);
-    border:1px solid var(--strong);
-    border-radius:7px;padding:6px 9px
-  }
-  .preview-cards h3{
-    font-size:20px;
-    color:var(--text);
-    margin:20px 0 8px
-  }
-  .preview-cards p{
-    color:var(--muted);
-    margin-bottom:16px
-  }
-  .preview-cards a,.text-link{
-    color:var(--text);
-    text-decoration:underline;
-    text-underline-offset:4px
-  }
-  .preview-cards a:hover,.text-link:hover{
-    color:var(--muted)
-  }
-  @media(max-width:900px){
-    .preview-cards{
-      grid-template-columns:repeat(2,1fr)
+
+<script>
+  const copyButton = document.querySelector<HTMLButtonElement>('[data-copy-commands]');
+  const commands = document.querySelector<HTMLElement>('#docker-commands');
+  const copyStatus = document.querySelector<HTMLElement>('[data-copy-status]');
+
+  copyButton?.addEventListener('click', async () => {
+    if (!commands || !copyStatus) return;
+
+    try {
+      await navigator.clipboard.writeText(commands.textContent?.trim() ?? '');
+      copyStatus.textContent = 'Copied';
+    } catch {
+      copyStatus.textContent = 'Copy failed';
     }
-  }
-  @media(max-width:640px){
-    .feature-preview{
-        padding-bottom:72px
-    }
-    .feature-preview .section-intro h2{
-        font-size:32px
-    }
-    .preview-cards{
-        grid-template-columns:1fr
-    }
-    .preview-cards article{
-      min-height:0
-    }
-  }
-</style>
+  });
+</script>
