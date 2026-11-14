@@ -73,9 +73,6 @@ jobs:
           const sections = {
             feat: { title: 'Improvements', commits: [] },
             fix: { title: 'Bug Fixes', commits: [] },
-            chore: { title: 'Maintenance', commits: [] },
-            perf: { title: 'Performance', commits: [] },
-            other: { title: 'Other Changes', commits: [] },
           }
 
           const repository = process.env.GITHUB_REPOSITORY
@@ -85,7 +82,7 @@ jobs:
             const subject = subjectParts.join('\t')
 
             const match = subject.match(
-              /^(feat|fix|chore|perf)(?:\([^)]+\))?(!)?:\s*(.+)$/i
+              /^(feat|fix)(?:\([^)]+\))?(!)?:\s*(.+)$/i
             )
 
             const type = match?.[1].toLowerCase() ?? 'other'

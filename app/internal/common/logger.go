@@ -18,6 +18,7 @@ import (
 
 const maxLogBytes int64 = 50 << 20
 const maxRequestIDLength = 64
+const logQueueSize = 4096
 
 type statusWriter struct {
 	http.ResponseWriter
@@ -99,10 +100,18 @@ func (l *logFile) write(message string) {
 }
 
 type requestLogger struct {
-	mutex   sync.Mutex
-	request logFile
-	failed  logFile
-	closed  bool
+	mutex    sync.Mutex
+	request  logFile
+	failed   logFile
+	entries  chan logEntryRecord
+	done     chan struct{}
+	closeErr error
+	closed   bool
+}
+
+type logEntryRecord struct {
+	message string
+	isError bool
 }
 
 type requestLoggerHandler struct {
@@ -167,9 +176,16 @@ func normalizeSkipPaths(values []string) []string {
 
 func (h *requestLoggerHandler) Close() error {
 	h.logger.mutex.Lock()
-	defer h.logger.mutex.Unlock()
-	h.logger.closed = true
-	return errors.Join(h.logger.request.close(), h.logger.failed.close())
+	if !h.logger.closed {
+		h.logger.closed = true
+		close(h.logger.entries)
+	}
+	h.logger.mutex.Unlock()
+	<-h.logger.done
+	h.logger.mutex.Lock()
+	err := h.logger.closeErr
+	h.logger.mutex.Unlock()
+	return err
 }
 
 func CloseRequestLogger(handler http.Handler) error {
@@ -189,17 +205,17 @@ func RequestLoggerTrusted(next http.Handler, trusted []*net.IPNet) http.Handler 
 	return RequestLoggerWithSkip(next, trusted, nil)
 }
 func RequestLoggerWithSkip(next http.Handler, trusted []*net.IPNet, skipPaths []string) http.Handler {
-	dir := os.Getenv("LEOXY_LOG_DIR")
-	if dir == "" {
-		dir = "log"
-	}
+	dir := "leoxy/log"
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		log.Fatal(err)
 	}
 	logger := &requestLogger{
 		request: logFile{path: filepath.Join(dir, "request.log")},
 		failed:  logFile{path: filepath.Join(dir, "error.log")},
+		entries: make(chan logEntryRecord, logQueueSize),
+		done:    make(chan struct{}),
 	}
+	go logger.writeLoop()
 
 	return &requestLoggerHandler{next: next, logger: logger, trusted: trusted, skipPaths: normalizeSkipPaths(skipPaths)}
 }
@@ -229,10 +245,18 @@ func (logger *requestLogger) write(message string, isError bool) {
 	if logger.closed {
 		return
 	}
-	logger.request.write(message)
-	if isError {
-		logger.failed.write(message)
+	logger.entries <- logEntryRecord{message: message, isError: isError}
+}
+
+func (logger *requestLogger) writeLoop() {
+	for entry := range logger.entries {
+		logger.request.write(entry.message)
+		if entry.isError {
+			logger.failed.write(entry.message)
+		}
 	}
+	logger.closeErr = errors.Join(logger.request.close(), logger.failed.close())
+	close(logger.done)
 }
 
 func validRequestID(value string) bool {

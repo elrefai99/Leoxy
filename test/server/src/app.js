@@ -58,7 +58,7 @@ const usersSchema = new Schema({
      timestamps: true
 })
 
-const userModel = model("User", usersSchema)
+export const userModel = model("User", usersSchema)
 
 const app = express()
 let totalRequests = 0
@@ -100,13 +100,25 @@ app.use(
      }),
 )
 
+app.get("/api/health", async (req, res) => {
+     try {
+          res.status(200).json({ code: 200, status: "OK", data: "GG" })
+     }
+     catch (err) {
+          console.error(err)
+          res.status(500).json({ code: 500, status: "Error" })
+     }
+})
+
+
 app.get("/api/user/all", async (req, res) => {
      try {
-          const users = await userModel.find({ status: "Confirmed" }).select("_id")
+          const users = await userModel.find({ status: "Confirmed" }, { _id: 1 }).limit(10).sort({ createdAt: -1 })
           res.status(200).json({ code: 200, status: "OK", data: users })
      }
      catch (err) {
           console.error(err)
+          res.status(500).json({ code: 500, status: "Error" })
      }
 })
 
@@ -133,3 +145,4 @@ if (process.env.NODE_ENV !== 'test') {
      startServer()
 }
 
+export { app }
