@@ -27,14 +27,14 @@ func TestRequestLoggerWritesRequestLog(t *testing.T) {
 	handler.ServeHTTP(response, req)
 	closeRequestLoggerForTest(t, handler)
 
-	requestLog, err := os.ReadFile("log/request.log")
+	requestLog, err := os.ReadFile("leoxy/log/request.log")
 	if err != nil {
 		t.Fatalf("read request log: %v", err)
 	}
 	if !strings.Contains(string(requestLog), "GET /health") {
 		t.Fatalf("request log does not contain request: %s", requestLog)
 	}
-	if _, err := os.Stat("log/error.log"); !os.IsNotExist(err) {
+	if _, err := os.Stat("leoxy/log/error.log"); !os.IsNotExist(err) {
 		t.Fatalf("error log should not exist for a successful request")
 	}
 }
@@ -56,7 +56,7 @@ func TestRequestLoggerWritesErrorsToBothLogs(t *testing.T) {
 	handler.ServeHTTP(response, req)
 	closeRequestLoggerForTest(t, handler)
 
-	for _, path := range []string{"log/request.log", "log/error.log"} {
+	for _, path := range []string{"leoxy/log/request.log", "leoxy/log/error.log"} {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatalf("read %s: %v", path, err)
@@ -88,7 +88,7 @@ func TestRequestLoggerAddsRequestIDAndJSONFields(t *testing.T) {
 	if requestID == "" {
 		t.Fatal("request ID was not returned")
 	}
-	data, err := os.ReadFile("log/request.log")
+	data, err := os.ReadFile("leoxy/log/request.log")
 	if err != nil {
 		t.Fatalf("read request log: %v", err)
 	}
@@ -139,7 +139,7 @@ func TestRequestLoggerDoesNotSkipByDefault(t *testing.T) {
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/node_modules/x", nil))
 	closeRequestLoggerForTest(t, handler)
 
-	data, err := os.ReadFile("log/request.log")
+	data, err := os.ReadFile("leoxy/log/request.log")
 	if err != nil {
 		t.Fatalf("read request log: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestRequestLoggerSkipPaths(t *testing.T) {
 			if response.Header().Get("X-Request-ID") == "" {
 				t.Fatal("request ID missing on skipped or logged request")
 			}
-			_, err := os.Stat("log/request.log")
+			_, err := os.Stat("leoxy/log/request.log")
 			if logged := err == nil; logged != test.logged {
 				t.Fatalf("logged = %v, want %v", logged, test.logged)
 			}
