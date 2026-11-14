@@ -25,6 +25,7 @@ func TestRequestLoggerWritesRequestLog(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
+	closeRequestLoggerForTest(t, handler)
 
 	requestLog, err := os.ReadFile("log/request.log")
 	if err != nil {
@@ -53,6 +54,7 @@ func TestRequestLoggerWritesErrorsToBothLogs(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/items", nil)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
+	closeRequestLoggerForTest(t, handler)
 
 	for _, path := range []string{"log/request.log", "log/error.log"} {
 		data, err := os.ReadFile(path)
@@ -80,6 +82,7 @@ func TestRequestLoggerAddsRequestIDAndJSONFields(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPut, "/items?id=secret", nil)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
+	closeRequestLoggerForTest(t, handler)
 
 	requestID := response.Header().Get("X-Request-ID")
 	if requestID == "" {
@@ -134,6 +137,7 @@ func TestRequestLoggerDoesNotSkipByDefault(t *testing.T) {
 	t.Cleanup(func() { _ = CloseRequestLogger(handler) })
 
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/node_modules/x", nil))
+	closeRequestLoggerForTest(t, handler)
 
 	data, err := os.ReadFile("log/request.log")
 	if err != nil {
@@ -168,6 +172,7 @@ func TestRequestLoggerSkipPaths(t *testing.T) {
 
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, test.path, nil))
+			closeRequestLoggerForTest(t, handler)
 
 			if response.Header().Get("X-Request-ID") == "" {
 				t.Fatal("request ID missing on skipped or logged request")
@@ -177,5 +182,12 @@ func TestRequestLoggerSkipPaths(t *testing.T) {
 				t.Fatalf("logged = %v, want %v", logged, test.logged)
 			}
 		})
+	}
+}
+
+func closeRequestLoggerForTest(t *testing.T, handler http.Handler) {
+	t.Helper()
+	if err := CloseRequestLogger(handler); err != nil {
+		t.Fatalf("close request logger: %v", err)
 	}
 }
