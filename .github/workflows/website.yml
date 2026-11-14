@@ -4,9 +4,11 @@ on:
   push:
     paths:
       - "website/**"
+      - ".github/workflows/website.yml"
   pull_request:
     paths:
       - "website/**"
+      - ".github/workflows/website.yml"
   workflow_dispatch:
 
 permissions:
@@ -20,13 +22,16 @@ jobs:
         working-directory: website
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: website/pnpm-lock.json
-      - run: npm ci
-      - run: npm run build
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
