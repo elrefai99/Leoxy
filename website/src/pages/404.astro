@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const title = 'Page not found — Leoxy';
+const description = 'The requested Leoxy page could not be found.';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<BaseLayout title={title} description={description}>
+  <main class="not-found wrap">
+    <span class="eyebrow">404</span>
+    <h1>Page not found.</h1>
+    <p>The address may be incorrect or the page may have moved.</p>
+    <a class="button button-primary" href={`${base}/`}>Return home</a>
+  </main>
+</BaseLayout>

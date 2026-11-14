@@ -1,0 +1,18 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const route = (path: string) => `${base}${path}`;
+const linkClass = 'mr-3 inline-flex min-h-11 items-center text-[#a3a3a3] transition-colors hover:text-white focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white last:mr-0';
+---
+<footer class="site-footer w-full border-t border-[#262626] bg-[#0a0a0a] px-6 py-2 font-mono text-xs leading-5 text-[#a3a3a3]">
+  <div class="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-x-6 gap-y-1">
+    <p class="m-0">
+      &copy; {new Date().getFullYear()} Leoxy. Built by{' '}
+      <a class={linkClass} href="https://github.com/elrefai99" target="_blank" rel="noopener noreferrer">elrefai99</a>
+    </p>
+    <nav class="flex flex-wrap items-center" aria-label="Footer navigation">
+      <a class={linkClass} href={route('/docs/')}>Docs</a>
+      <a class={linkClass} href="https://github.com/elrefai99/Leoxy" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a class={linkClass} href="https://hub.docker.com/r/mohamed0699/leoxy" target="_blank" rel="noopener noreferrer">Docker Hub</a>
+    </nav>
+  </div>
+</footer>

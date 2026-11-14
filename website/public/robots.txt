@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://elrefai99.github.io/Leoxy/sitemap-index.xml

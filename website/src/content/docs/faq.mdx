@@ -1,0 +1,25 @@
+---
+title: FAQ
+description: Answers to common Leoxy setup and routing questions.
+slug: docs/faq
+---
+
+## Where is the configuration file?
+
+By default, Leoxy reads `leoxy/leoxy_config.yaml` relative to its current working directory. The `--config` flag selects another file; `--data-dir` changes the working directory used for relative paths.
+
+## Why does an upstream URL need a scheme?
+
+HTTP upstreams must use an absolute `http://` or `https://` URL with a host. TCP and UDP use host-and-port addresses instead.
+
+## Why can’t a container reach my host service at localhost?
+
+Inside Docker, `localhost` refers to the Leoxy container. Use an address reachable from that container, such as `host.docker.internal` for host services (with the host gateway mapping on Linux Docker Engine), or a Compose service name for another container.
+
+## Does `/health/live` prove that upstreams are healthy?
+
+No. It reports process liveness. `/health/ready` checks configured HTTP upstream readiness.
+
+## Does each HTTP protocol label use a different server?
+
+No. HTTP-family labels use the same HTTP reverse proxy handler. TCP and UDP are separate listeners configured with `protocol`, `listen`, and `server_url`.

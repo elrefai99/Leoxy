@@ -1,0 +1,150 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const title = 'Features — Leoxy';
+const description = 'Explore Leoxy routing, security, configuration, and operational features.';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const route = (path: string) => `${base}${path}`;
+---
+<BaseLayout title={title} description={description}>
+  <main class="feature-page">
+    <section class="wrap feature-hero" aria-labelledby="feature-title">
+      <span class="eyebrow">Features</span>
+      <h1 id="feature-title">Everything Leoxy does.</h1>
+      <p>Route HTTP requests by path, send traffic to TCP and UDP targets, and apply configurable request policies.</p>
+    </section>
+    <section class="wrap flow-card" aria-label="How a request flows">
+      <p class="terminal-label">How a request flows</p>
+      <div class="flow">
+        <span>Client</span>
+        <i>
+          request
+          <br />
+          response
+        </i>
+        <span class="flow-leoxy">Leoxy</span>
+        <i>
+          path rule
+          <br />
+          response
+        </i>
+        <span>Upstream</span>
+      </div>
+    </section>
+    <div class="wrap feature-groups">
+      <section class="feature-group" aria-labelledby="routing-title">
+        <header>
+          <span>01</span>
+          <div>
+            <h2 id="routing-title">Routing</h2>
+            <p>Forward HTTP requests using configured paths, or proxy TCP and UDP traffic through their own listeners.</p>
+          </div>
+        </header>
+        <div class="feature-cards">
+          <article>
+            <small>HTTP</small>
+            <h3>Path-based routes</h3>
+            <p>Match HTTP request paths to upstream destinations.</p>
+            <a href={route('/docs/configuration/')}>Read in the docs</a>
+          </article>
+          <article>
+            <small>UPSTREAMS</small>
+            <h3>Load balancing</h3>
+            <p>Distribute requests across multiple configured servers with failover.</p>
+            <a href={route('/docs/configuration/')}>Read in the docs</a>
+          </article>
+          <article>
+            <small>STREAMS</small>
+            <h3>TCP and UDP listeners</h3>
+            <p>Forward stream traffic from dedicated listeners to configured targets.</p>
+            <a href={route('/docs/usage/')}>Read in the docs</a>
+          </article>
+        </div>
+      </section>
+      <section class="feature-group" aria-labelledby="control-title">
+        <header>
+          <span>02</span>
+          <div>
+            <h2 id="control-title">Control and configuration</h2>
+            <p>Set listener, routing, and request behavior in YAML and override selected values through the environment.</p>
+          </div>
+        </header>
+        <div class="feature-cards">
+          <article>
+            <small>CONFIG</small>
+            <h3>YAML settings</h3>
+            <p>Define server options, timeouts, upstreams, and optional watcher behavior.</p>
+            <a href={route('/docs/configuration/')}>Read in the docs</a>
+          </article>
+          <article>
+            <small>SECURITY</small>
+            <h3>Request policies</h3>
+            <p>Configure rate limits, API keys, JWT, CIDR rules, method and path rules, and body limits.</p>
+            <a href={route('/docs/reference/')}>Read in the docs</a>
+          </article>
+          <article>
+            <small>TRANSPORT</small>
+            <h3>TLS and Redis</h3>
+            <p>Configure listener TLS, optional mTLS, and Redis for the global HTTP rate limiter.</p>
+            <a href={route('/docs/configuration/')}>Read in the docs</a>
+          </article>
+        </div>
+      </section>
+      <section class="feature-group" aria-labelledby="operations-title">
+        <header><span>03</span><div><h2 id="operations-title">Operations</h2><p>Run the proxy and inspect built-in health and metrics endpoints.</p></div></header>
+        <div class="feature-cards">
+          <article>
+            <small>HEALTH</small>
+            <h3>Liveness and readiness</h3>
+            <p>Check whether the process responds and whether HTTP upstreams are ready.</p>
+            <a href={route('/docs/reference/')}>Read in the docs</a>
+          </article>
+          <article>
+            <small>METRICS</small>
+            <h3>Request metrics</h3>
+            <p>Expose HTTP request and response metrics at the built-in endpoint.</p>
+            <a href={route('/docs/reference/')}>Read in the docs</a>
+          </article>
+          <article>
+            <small>WATCHER</small>
+            <h3>Resource reports</h3>
+            <p>Optionally sample process memory and write reports when the configured threshold is reached.</p>
+            <a href={route('/docs/configuration/')}>Read in the docs</a>
+          </article>
+        </div>
+      </section>
+    </div>
+    <section class="wrap feature-reference" aria-labelledby="reference-title">
+      <h2 id="reference-title">Configuration at a glance</h2>
+      <div class="table-scroll"><table><thead><tr><th>Capability</th><th>Configuration</th><th>Applies to</th></tr></thead><tbody>
+        <tr>
+          <td>Path routing</td>
+          <td>
+            <code>upstream[].path</code>
+          </td>
+          <td>HTTP requests</td>
+        </tr>
+        <tr>
+          <td>Upstream pool</td>
+          <td>
+            <code>upstream[].servers</code>
+          </td><td>HTTP routes</td>
+        </tr>
+        <tr>
+          <td>Stream listener</td>
+          <td>
+            <code>protocol</code>, <code>listen</code>, <code>server_url</code>
+          </td>
+          <td>TCP and UDP entries</td>
+        </tr>
+        <tr>
+          <td>Access policies</td>
+          <td>
+            <code>upstream[].security</code>
+          </td><td>HTTP routes</td></tr>
+      </tbody>
+    </table>
+  </div>
+      <a class="button button-primary" href={route('/docs/')}>Read the documentation</a>
+    </section>
+  </main>
+</BaseLayout>

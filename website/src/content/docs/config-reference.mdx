@@ -1,0 +1,177 @@
+---
+title: Configuration reference
+description: Field-by-field reference for every setting in config/leoxy_config.yaml.
+slug: docs/config-reference
+---
+
+This page explains every key in the repository's [`config/leoxy_config.yaml`](https://github.com/elrefai99/Leoxy/blob/main/config/leoxy_config.yaml) example. The sample is illustrative: copy it to `leoxy/leoxy_config.yaml` in Leoxy's working directory and change the hostnames, ports, limits, access rules, and webhook URL for your deployment.
+
+Leoxy reads `leoxy/leoxy_config.yaml` by default. On first start it creates a small default file at that path; it does not copy this repository example automatically. The CLI's `--config` flag selects another file, while `--data-dir` changes the working directory used for relative paths and runtime files.
+
+## `server`
+
+`server` configures the HTTP(S) listener, shared security policy, timeout values, and request logging.
+
+### `server.host` and `server.port`
+
+| Key | Example value | Meaning |
+| --- | --- | --- |
+| `host` | `"127.0.0.1"` | Address for the HTTP listener. The sample binds to loopback, so it accepts local connections only. Set a reachable interface such as `"0.0.0.0"` when clients connect from outside the host or container. |
+| `port` | `"80"` | HTTP listener port, stored as a string. `PORT` overrides this value. If blank, the runtime uses port `80`. |
+
+`LEOXY_HOST` overrides `server.host`. `tls_cert` and `tls_key` under `server.security` enable HTTPS on this listener.
+
+### `server.timeout`
+
+All timeout values are seconds. The sample explicitly sets the values below; the loader also applies these values when a setting is zero or omitted.
+
+| Key | Sample | Runtime use |
+| --- | ---: | --- |
+| `connect` | `5` | Timeout for connecting to an HTTP upstream. |
+| `read` | `30` | HTTP server read timeout. |
+| `write` | `30` | HTTP server write timeout. |
+| `idle` | `60` | HTTP keep-alive idle timeout. |
+| `request` | `60` | Accepted by the config loader and defaulted to 60, but the current runtime does not apply it to the HTTP server or proxy. |
+
+The server also sets a 5-second read-header timeout and a 1 MiB maximum header size in code; those values are not configurable in this YAML sample.
+
+### `server.logging`
+
+| Key | Sample | Meaning |
+| --- | --- | --- |
+| `skip_paths` | `["/assets", "/static"]` | Path prefixes omitted from request logging. A matching path and its descendants are skipped. `/` is rejected because it would skip all request logs. This changes logging only; it does not block or exclude the requests from routing or metrics. |
+
+### `server.security`
+
+These settings establish policy for HTTP requests across the listener. Route-specific security can be set under each HTTP upstream's `security` block.
+
+#### Rate limits
+
+Rate values are tokens per minute. A burst value sets the bucket capacity. A rate of `0` disables that policy; when an enabled policy has a burst of `0`, the runtime uses the rate as the burst capacity.
+
+| Key | Sample | Meaning |
+| --- | ---: | --- |
+| `rate_limit` | `0` | Legacy per-client limit inherited by non-root HTTP routes if that route has no positive `rate_limit`. `RATE_LIMIT` overrides this server value. |
+| `rate_limit_burst` | `0` | Burst capacity paired with the legacy server per-client limit. |
+| `global_rate_limit` | `1000` | Shared HTTP-wide token rate. The sample's global limiter is shared by all HTTP routes and runs before route handling. |
+| `global_rate_burst` | `1000` | Capacity for the shared global token bucket. |
+| `route_rate_limit` | `0` | Shared server-level route-rate default supplied to no route automatically; set route-specific limits on the matching upstream. |
+| `route_rate_burst` | `0` | Burst paired with the server-level route-rate value. |
+
+The upstream policies are checked in addition to the shared global policy. A non-root route with no positive per-client rate inherits the server's legacy per-client rate and burst. The `/` route does not inherit it.
+
+#### Authentication and access
+
+| Key | Sample | Meaning |
+| --- | --- | --- |
+| `api_keys` | `[]` | Optional API key allowlist. Requests can send a key in `X-API-Key` or as a bearer credential in `Authorization`. An empty list disables API-key authentication for this policy. |
+| `jwt_secret` | `""` | Secret for HS256 JWT verification. When set, it must be at least 32 bytes. Tokens must include `exp`; optional issuer and audience constraints come from the next two keys. `JWT_SECRET` overrides this setting. |
+| `jwt_issuer` | `""` | Optional required JWT issuer (`iss`). `JWT_ISSUER` overrides this setting. |
+| `jwt_audience` | `""` | Optional required JWT audience (`aud`). `JWT_AUDIENCE` overrides this setting. |
+| `require_mtls` | `false` | Require a verified client certificate. This requires the listener certificate, key, and `client_ca` below. |
+| `allow_cidrs` | `[]` | If non-empty, only client IP addresses inside these CIDR ranges are allowed. |
+| `deny_cidrs` | `[]` | Client IP addresses inside these CIDR ranges are rejected. Deny rules are checked before allow rules. |
+| `allowed_methods` | `[GET, POST, PUT, PATCH, DELETE, OPTIONS]` | HTTP method allowlist. With a non-empty list, other methods are rejected. `TRACE` is always rejected. |
+| `allowed_paths` | `[]` | Optional path allowlist using Go `path.Match` patterns. An empty list allows every path through this check. |
+| `trusted_proxy_cidrs` | `[]` | Proxy network ranges trusted to provide forwarding headers. Leoxy uses forwarded client information only when the direct peer is in one of these ranges. |
+| `internal_cidrs` | `[]` | When configured, restricts `/metrics`, `/health/ready`, and `/leoxy` to these client networks. |
+
+All CIDR entries must be valid network ranges such as `192.0.2.0/24`. `API_KEYS` overrides the server-level key list with a comma-separated value.
+
+#### Request limits and Redis
+
+| Key | Sample | Meaning |
+| --- | --- | --- |
+| `max_body` | `10` | Maximum HTTP request body size in MiB when a route does not set a positive `security.max_body` or `body` value. |
+| `max_conns_per_ip` | empty | Stream connection limit when used in a TCP or UDP upstream's security settings. This server-level value is not applied as an HTTP connection limit. |
+| `redis_connect` | `16` | Capacity of the Redis connection pool used by the shared global rate limiter. A value of zero is replaced with `16`. |
+| `redis_addr` | `""` | Redis address for the shared global HTTP rate limiter. If blank, the limiter uses local in-process memory. |
+| `redis_password` | `""` | Redis password. `REDIS_PASSWORD` overrides this setting. |
+| `redis_db` | `0` | Redis logical database number. |
+| `redis_fail_open` | `false` | If true, a Redis error falls back to the local global rate limiter. If false, a Redis error returns HTTP 503. |
+
+Redis configuration is used for the server-wide global HTTP limiter. Redis keys and connection settings under an individual upstream's `security` block are not used by the current route middleware.
+
+#### TLS
+
+| Key | Sample | Meaning |
+| --- | --- | --- |
+| `tls_cert` | `""` | Path to the server certificate. Set it together with `tls_key` to serve HTTPS. |
+| `tls_key` | `""` | Path to the private key matching `tls_cert`. Set both paths or leave both blank. |
+| `client_ca` | `""` | Path to a PEM CA bundle used to verify client certificates. Required together with the server certificate and key when mTLS is required. |
+
+The listener enforces TLS 1.2 or newer when TLS is enabled. `require_mtls` requires all three TLS paths; an HTTP route can require a verified client certificate through the HTTP listener. On TCP/UDP entries, `require_mtls` is not enforced by the stream proxy, although validation still requires the server certificate, key, and client CA when it is set.
+
+## `watcher`
+
+The watcher samples Go runtime resources when `status` is exactly `"on"`. A positive memory threshold is also required for monitoring to start.
+
+| Key | Sample | Meaning |
+| --- | --- | --- |
+| `status` | `"on"` | Enables the watcher when set to the exact string `"on"`. Other values leave it off. |
+| `project_name` | `"pbe"` | Project label written into resource reports and logs. `PROJECT_NAME` overrides it. |
+| `memory_limit_mb` | `100` | Memory threshold in MiB. A non-positive value disables monitoring even if `status` is `"on"`. `MEMORY_LIMIT_MB` overrides it when the value parses as an integer. |
+| `interval_seconds` | `5` | Time between runtime samples. Values at or below zero use a 5-second fallback. |
+| `cooldown_seconds` | `300` | Minimum time between reports after the threshold is reached. Values at or below zero use a 5-minute fallback. |
+| `heap_profile` | `true` | Writes a Go heap profile when a memory report is produced. |
+| `webhook_url` | sample URL | Optional HTTP or HTTPS endpoint that receives a POST with the JSON resource report. Replace the sample URL with your own endpoint or leave it empty. `Watcher_WEBHOOK_URL` is the environment override as spelled in the current loader. |
+
+Reports and optional heap profiles are written under `leoxy/log` relative to the runtime working directory by default. The watcher retains up to 20 report files and up to 20 heap profiles. It also updates the memory metric exposed at `/metrics`.
+
+## `upstream`
+
+`upstream` is a list. Each item configures an HTTP route or an independent TCP/UDP listener. The example has two HTTP routes and one TCP and UDP listener.
+
+### Fields shared by upstream entries
+
+| Key | Example | Meaning |
+| --- | --- | --- |
+| `name` | `"Backend"` | Label used in startup and error logs. |
+| `protocol` | `"http"`, `"tcp"`, `"udp"` | Selects an HTTP route or a separate stream listener. HTTP-compatible values accepted by validation are blank, `http`, `https`, `http2`, `graphql`, and `websocket`; they all use the same HTTP reverse-proxy handler. |
+| `listen` | `""` for HTTP; `":7001"` for TCP | Address for TCP/UDP listeners. It is not used by HTTP routes. Stream entries require both `listen` and `server_url`; listener addresses must be unique within the same protocol. |
+| `path` | `"/api"` or `"/"` | HTTP route prefix. Paths are normalized to start with `/`, must be unique, and cannot use reserved paths such as `/ping`, `/health`, `/metrics`, or `/leoxy`. It is not used for TCP/UDP. |
+| `ip` | `true` or `false` | For HTTP, controls whether Leoxy sets the `X-Real-IP` header. Leoxy always sets `X-Forwarded-For`, `X-Forwarded-Proto`, and `X-Forwarded-Host`. It is not used for TCP/UDP. |
+| `server_url` | HTTP URL or stream address | One HTTP target when `servers` is empty; for TCP/UDP, the required target host and port. |
+| `servers` | list of HTTP URLs | Optional HTTP target pool. If non-empty, this list is used instead of `server_url`. The sample's Backend has both fields, so its two `servers` entries are used and `server_url` is ignored. |
+| `limit_request` | `0` | Present in the config schema but not enforced by the current runtime. |
+| `body` | `10` for HTTP, `0` for streams | HTTP request body fallback in MiB: route `security.max_body` wins when positive; otherwise `body` is used, then server `security.max_body`. Not used for TCP/UDP. |
+| `security` | mapping | Route/stream access policies. Which settings apply depends on the protocol, described below. |
+
+HTTP targets must be absolute `http://` or `https://` URLs with a host. TCP and UDP targets use `host:port` addresses and do not include a URL scheme.
+
+### HTTP route behavior in the sample
+
+| Entry | Effective behavior |
+| --- | --- |
+| `Backend` | Routes `/api` to the two URLs in `servers`; forwards `X-Real-IP`; applies its per-client limit of 10,000 tokens per minute with burst 1,000, plus a route-shared limit of 1,000 per minute with burst 50; applies a 10 MiB body limit through `body`. |
+| `Frontend` | Catch-all `/` route to `http://localhost:3000`; does not set `X-Real-IP`; applies a per-client limit of 1,000 per minute with burst 500; applies a 10 MiB body limit through `body`. |
+
+Both routes also pass through the server-wide global limit of 1,000 per minute with burst 1,000. The global limiter is charged before route policies. For a non-root route without a positive per-client rate, the server's legacy rate and burst are inherited; the root route does not inherit them.
+
+### `upstream[].security` for HTTP
+
+The same security keys described for `server.security` may appear on an HTTP route. Route security controls that are applied include per-client `rate_limit` / `rate_limit_burst`, per-route `route_rate_limit` / `route_rate_burst`, API key and JWT authentication, `require_mtls`, CIDR allow/deny rules, method and path allowlists, `max_body`, and `trusted_proxy_cidrs`. Route values are scoped to that route. The server-wide global rate limiter still applies across all HTTP routes.
+
+`global_rate_limit`, `global_rate_burst`, `redis_connect`, `redis_addr`, `redis_password`, `redis_db`, and `redis_fail_open` inside an individual upstream security mapping are not read by the current HTTP route middleware; configure those shared global limiter settings under `server.security` instead. `internal_cidrs` is read from `server.security` for the built-in internal endpoints.
+
+### `upstream[].security` for TCP and UDP
+
+For a `tcp` or `udp` entry, only `allow_cidrs`, `deny_cidrs`, and `max_conns_per_ip` are used by the stream policy. The sample allows `10.0.0.0/8` and caps each client IP at 20 active TCP connections or UDP sessions. HTTP authentication, rate limits, method/path checks, body limits, Redis, and trusted/internal proxy CIDRs are not applied to stream traffic. Stream listeners do not enable TLS or mTLS from the TLS fields in this block.
+
+## Environment overrides
+
+These explicit overrides are implemented by the config loader:
+
+| Variable | Overrides |
+| --- | --- |
+| `PORT` | `server.port` |
+| `LEOXY_HOST` | `server.host` |
+| `RATE_LIMIT` | `server.security.rate_limit` |
+| `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE` | Corresponding fields under `server.security` |
+| `API_KEYS` | `server.security.api_keys` as a comma-separated list |
+| `REDIS_PASSWORD` | `server.security.redis_password` |
+| `MEMORY_LIMIT_MB` | `watcher.memory_limit_mb` when the value is an integer |
+| `PROJECT_NAME` | `watcher.project_name` |
+| `Watcher_WEBHOOK_URL` | `watcher.webhook_url` |
+
+Keep actual secrets in the environment rather than committing them to a YAML file. For CLI path options, endpoints, and validation rules, see [Reference](../reference/).

@@ -1,0 +1,45 @@
+---
+title: Usage
+description: Run Leoxy in the foreground or manage it as a background process.
+slug: docs/usage
+---
+
+## Run in the foreground
+
+```sh
+./leoxy
+```
+
+The CLI can select an alternate configuration file and data directory:
+
+```sh
+./leoxy --config ./config/leoxy_config.yaml --data-dir ./runtime
+```
+
+The config path is resolved before the data directory becomes the process working directory. Relative paths in the selected configuration therefore resolve from that runtime directory.
+
+## Manage a background process
+
+```sh
+./leoxy start
+./leoxy restart
+./leoxy stop
+```
+
+`start` appends output to `leoxy/log/leoxy.log` and writes a PID file under `leoxy/keys/`. Use `version` to print the executable version:
+
+```sh
+./leoxy version
+```
+
+On Windows, use the `.exe` binary name instead. The CLI also supports `--help` and `-h` for command help.
+
+## Send a request
+
+With an HTTP upstream configured at `/api`, start Leoxy and send a request to its listener. For the sample listener on port 80:
+
+```sh
+curl http://127.0.0.1/api
+```
+
+The request path must match a configured upstream path. For Docker deployment and networking, see the repository's Docker guide.

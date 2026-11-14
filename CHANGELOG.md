@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Added
+- add an Astro landing page with self-hosted fonts, brand assets, and SEO metadata
+- publish Starlight guides for installation, configuration, usage, runtime reference, and FAQ
+- build and deploy the website to GitHub Pages with a website path filter
+
 ## [1.13.2] - 2026-11-05
 
 ## Added

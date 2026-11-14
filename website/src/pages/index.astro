@@ -1,0 +1,126 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Logo from '../components/Logo.astro';
+const title = 'Leoxy — a lightweight reverse proxy';
+const description = 'Leoxy is a lightweight Go reverse proxy for routing HTTP, TCP, and UDP traffic to configured upstream services.';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const route = (path: string) => `${base}${path}`;
+const applicationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Leoxy',
+  applicationCategory: 'DeveloperApplication',
+  description,
+  url: 'https://elrefai99.github.io/Leoxy/',
+  codeRepository: 'https://github.com/elrefai99/Leoxy',
+  programmingLanguage: 'Go',
+};
+---
+<BaseLayout title={title} description={description}>
+  <script type="application/ld+json" set:html={JSON.stringify(applicationJsonLd)} />
+  <main>
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <span class="eyebrow">
+          <span class="mr-2">Version</span>
+           1.14.4
+          </span>
+        <h1 id="hero-title">
+          Route everything.
+          <br />
+          Run one proxy.
+        </h1>
+        <p>Leoxy is a lightweight Go reverse proxy that sends traffic through one simple, configurable layer.</p>
+        <div class="button-row">
+          <a class="button button-primary" href={route('/docs/')}>Read the docs</a>
+          <a class="button button-secondary" href="https://github.com/elrefai99/Leoxy">View on GitHub</a>
+        </div>
+      </div>
+      <div class="hero-mark"><Logo /></div>
+    </section>
+    <section class="wrap terminal relative overflow-hidden rounded-sm border-black bg-black p-0" aria-label="Get started commands">
+      <div class="flex h-11 items-center justify-between border-b border-black bg-black pl-4">
+        <div class="flex items-center gap-1.5" aria-hidden="true">
+        </div>
+        <span class="sr-only" data-copy-status aria-live="polite"></span>
+        <button class="flex h-11 w-11 items-center justify-center border-0 bg-black text-muted transition-colors hover:bg-black hover:text-white focus-visible:z-10 focus-visible:text-white focus-visible:outline-none" type="button" data-copy-commands aria-label="Copy Docker commands" title="Copy commands">
+          <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-icon="lucide:copy">
+            <rect width="14" height="14" x="8" y="8" rx="2" />
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2" />
+          </svg>
+        </button>
+      </div>
+      <pre class="m-0 overflow-x-auto whitespace-pre px-4 py-3 font-mono text-[13px] leading-6 text-[#d4d4d4]"><code id="docker-commands"><span class="text-[#60a5fa]">docker pull</span>{' '}<span class="text-[#fbbf24]">mohamed0699/leoxy:latest</span>
+<span class="text-[#60a5fa]">docker run</span>{' '}<span class="text-[#93c5fd]">--rm -p 80:80 -v</span>{' '}&quot;<span class="text-[#fbbf24]">$PWD/leoxy:/app/leoxy</span>&quot;{' '}<span class="text-[#fbbf24]">mohamed0699/leoxy:latest</span></code></pre>
+    </section>
+    <section class="wrap feature-preview" aria-labelledby="features-title">
+      <div class="section-intro">
+        <span class="eyebrow">Features</span>
+        <h2 id="features-title">A small proxy with clear controls.</h2>
+        <p>Route requests, set access policies, and operate HTTP and stream listeners.</p>
+      </div>
+      <div class="preview-cards">
+        <article>
+          <span>01</span>
+          <h3>Path-based routing</h3>
+          <p>Forward HTTP requests to the configured upstream for each path.</p>
+          <a href={route('/features/')}>Explore features</a>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Configurable security</h3>
+          <p>Set rate limits, authentication, network rules, request limits, and TLS.</p>
+          <a href={route('/features/')}>Explore features</a>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>HTTP, TCP, and UDP</h3>
+          <p>Use dedicated listeners for HTTP routes and TCP or UDP targets.</p>
+          <a href={route('/features/')}>Explore features</a>
+        </article>
+      </div>
+      <a class="text-link" href={route('/features/')}>See all features</a>
+    </section>
+    <section class="wrap steps" aria-labelledby="steps-title">
+      <h2 id="steps-title">Up and running in three steps</h2>
+      <div class="step-grid">
+        <article>
+          <span>STEP 01</span>
+          <h3>Install</h3>
+            <p>Pull the published Leoxy image from Docker Hub.</p>
+        </article>
+        <article>
+          <span>STEP 02</span>
+          <h3>Configure</h3>
+          <p>Set your HTTP upstreams in the YAML config file.</p>
+        </article>
+        <article>
+          <span>STEP 03</span>
+          <h3>Run</h3><p>Start Leoxy and send a request to your configured route.</p>
+        </article>
+      </div>
+    </section>
+    <section class="wrap cta">
+      <h2>Start with the docs</h2>
+      <p>Installation, configuration, and usage in one place.</p>
+      <a class="button button-primary" href={route('/docs/')}>Open documentation</a>
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  const copyButton = document.querySelector<HTMLButtonElement>('[data-copy-commands]');
+  const commands = document.querySelector<HTMLElement>('#docker-commands');
+  const copyStatus = document.querySelector<HTMLElement>('[data-copy-status]');
+
+  copyButton?.addEventListener('click', async () => {
+    if (!commands || !copyStatus) return;
+
+    try {
+      await navigator.clipboard.writeText(commands.textContent?.trim() ?? '');
+      copyStatus.textContent = 'Copied';
+    } catch {
+      copyStatus.textContent = 'Copy failed';
+    }
+  });
+</script>
