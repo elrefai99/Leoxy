@@ -6,7 +6,7 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   vite: { plugins: [tailwindcss()] },
   site: 'https://elrefai99.github.io',
-  base: process.env.NODE_ENV === 'production' ? '/Leoxy' : '/',
+  base: process.env.VERCEL ? '/' : process.env.NODE_ENV === 'production' ? '/Leoxy' : '/',
   integrations: [sitemap(), starlight({
     title: 'Leoxy Documentation',
     description: 'Guides and reference for the Leoxy reverse proxy.',
