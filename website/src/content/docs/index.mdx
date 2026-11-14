@@ -1,0 +1,25 @@
+---
+title: Getting started
+description: Learn what Leoxy does and how to build and run the proxy.
+slug: docs
+---
+
+Leoxy is a lightweight reverse proxy written in Go. It routes HTTP requests to configured upstreams by path, and can also run separate TCP and UDP proxy listeners.
+
+## What you can configure
+
+- HTTP routes with one upstream URL or a list of servers.
+- TCP and UDP listeners with their own target addresses.
+- HTTP security policies including rate limits, API key or JWT authentication, CIDR access rules, body limits, and TLS.
+- Health and metrics endpoints for operating the service.
+
+## Quick start
+
+Pull and run the published Docker image:
+
+```sh
+docker pull mohamed0699/leoxy:latest
+docker run --rm -p 80:80 -v "$PWD/leoxy:/app/leoxy" mohamed0699/leoxy:latest
+```
+
+Leoxy reads `/app/leoxy/leoxy_config.yaml` and creates a default config if that file is missing. The generated default does not contain your application routes; add your upstreams before sending application traffic. See [Installation](./installation/) and [Configuration](./configuration/). To build the CLI from source instead, follow the source build instructions on the installation page.

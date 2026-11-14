@@ -1,0 +1,181 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+:root {
+     color-scheme: dark;
+     --sl-color-accent-low: #202020;
+     --sl-color-accent: #d4d4d4;
+     --sl-color-accent-high: #fff;
+     --sl-color-white: #fff;
+     --sl-color-gray-1: #d4d4d4;
+     --sl-color-gray-2: #a3a3a3;
+     --sl-color-gray-3: #737373;
+     --sl-color-gray-4: #404040;
+     --sl-color-gray-5: #262626;
+     --sl-color-gray-6: #0a0a0a;
+     --sl-color-black: #000;
+     --sl-font: 'Inter Variable', Inter, Arial, sans-serif;
+     --sl-font-mono: 'JetBrains Mono Variable', monospace;
+     --sl-content-width: 52rem;
+     --sl-sidebar-width: 15rem
+}
+
+body {
+     background: #000
+}
+
+.site-footer {
+     width: 100%;
+     min-height: 80px;
+     padding: 20px max(24px, calc((100% - 1120px) / 2));
+     border-top: 1px solid #262626;
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     flex-wrap: wrap;
+     gap: 12px 24px;
+     color: #a3a3a3;
+     box-sizing: border-box
+}
+
+.bp-footer__datum {
+     margin: 0;
+     color: #a3a3a3;
+     font-family: 'JetBrains Mono Variable', monospace;
+     font-size: 12px;
+     line-height: 1.6
+}
+
+.bp-footer__datum a,
+.site-footer__repo {
+     color: #a3a3a3;
+     text-decoration: none;
+     text-underline-offset: 4px
+}
+
+.site-footer__repo {
+     min-height: 44px;
+     display: inline-flex;
+     align-items: center
+}
+
+.site-footer a:hover {
+     color: #fff
+}
+
+.site-footer a:focus-visible {
+     outline: 2px solid #fff;
+     outline-offset: 4px
+}
+
+header.header {
+     border-bottom: 1px solid #262626
+}
+
+.site-title-link {
+     display: inline-flex;
+     align-items: center;
+     gap: .65rem;
+     color: #fff;
+     text-decoration: none;
+     font-weight: 700;
+     font-size: 1.25rem
+}
+
+.site-title-link .logo-mark {
+     width: 28px;
+     height: 32px
+}
+
+.right-sidebar {
+     border-inline-start: 1px solid #262626
+}
+
+.sidebar-content a {
+     min-height: 44px
+}
+
+.sl-markdown-content :is(h1, h2, h3) {
+     letter-spacing: -.025em
+}
+
+.sl-markdown-content h1 {
+     font-size: clamp(2.5rem, 5vw, 4rem)
+}
+
+.sl-markdown-content pre {
+     border: 1px solid #262626;
+     border-radius: 10px
+}
+
+.sl-markdown-content a {
+     color: #fff;
+     text-decoration-thickness: 1px;
+     text-underline-offset: 3px
+}
+
+.sl-markdown-content :focus-visible {
+     outline: 2px solid #fff;
+     outline-offset: 3px
+}
+
+.pagination-links a {
+     border-color: #404040
+}
+
+.header a:focus-visible,
+.sidebar-content a:focus-visible {
+     outline: 2px solid #fff;
+     outline-offset: 3px
+}
+
+header .social-icons .site-nav-links {
+     display: flex;
+     align-items: center;
+     gap: 1.5rem;
+     font-size: .92rem;
+     color: var(--sl-color-text)
+}
+
+header .social-icons .site-nav-links a {
+     min-height: 44px;
+     display: inline-flex;
+     align-items: center;
+     text-decoration: none;
+     color: var(--sl-color-text)
+}
+
+header .social-icons .site-nav-links a:hover {
+     color: #fff
+}
+
+header .social-icons .site-nav-links .github-link {
+     border: 1px solid #404040;
+     border-radius: 8px;
+     padding: 0 15px;
+     color: #fff
+}
+
+header .social-icons .site-nav-links .github-link:hover {
+     border-color: #fff
+}
+
+header .social-icons .site-nav-links a:focus-visible {
+     outline: 2px solid #fff;
+     outline-offset: 3px
+}
+
+@media(max-width:900px) {
+     .right-sidebar {
+          display: none
+     }
+}
+
+@media(max-width:640px) {
+     .site-footer {
+          padding-inline: 16px;
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 4px
+     }
+}

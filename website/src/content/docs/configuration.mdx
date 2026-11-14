@@ -1,0 +1,65 @@
+---
+title: Configuration
+description: Configure Leoxy listeners, upstreams, security policies, and environment overrides.
+slug: docs/configuration
+---
+
+Leoxy reads YAML from `leoxy/leoxy_config.yaml` relative to its working directory by default. If the file is missing, the application writes a default configuration. Select a different file with `--config`; `--data-dir` changes the working directory used for relative paths and runtime data.
+
+## Minimal HTTP configuration
+
+```yaml
+server:
+  host: "127.0.0.1"
+  port: "8080"
+upstream:
+  - name: "Backend"
+    protocol: "http"
+    path: "/api"
+    server_url: "http://localhost:9000"
+```
+
+The host and port configure the HTTP listener. The route forwards paths under `/api` to the target URL. Upstream HTTP URLs must be absolute and use `http` or `https` with a host.
+
+## Multiple HTTP targets
+
+Use `servers` to configure more than one target for a route:
+
+```yaml
+upstream:
+  - name: "Backend"
+    path: "/api"
+    servers:
+      - "http://localhost:9000"
+      - "http://localhost:9001"
+```
+
+For one target, set `server_url`. Use `path: "/"` for a catch-all route. HTTP paths must be unique; Leoxy reserves `/ping`, `/health`, `/metrics`, and `/leoxy` paths.
+
+## TCP and UDP
+
+TCP and UDP upstreams use separate listeners and host/port targets:
+
+```yaml
+upstream:
+  - name: "GameTCP"
+    protocol: "tcp"
+    listen: ":7001"
+    server_url: "127.0.0.1:7000"
+  - name: "TelemetryUDP"
+    protocol: "udp"
+    listen: ":7002"
+    server_url: "127.0.0.1:7003"
+```
+
+## Environment overrides
+
+The current config loader recognizes these environment variables: `PORT`, `LEOXY_HOST`, `RATE_LIMIT`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `API_KEYS`, `REDIS_PASSWORD`, `MEMORY_LIMIT_MB`, `PROJECT_NAME`, and `Watcher_WEBHOOK_URL`. `API_KEYS` is a comma-separated list. Keep credentials out of committed configuration.
+
+## Security and timeouts
+
+Security settings can be set under `server.security` and, for HTTP routes, `upstream[].security`. They cover rate limits, API keys, HS256 JWT verification, allowed and denied CIDRs, method and path rules, maximum body size, trusted proxy CIDRs, TLS, and optional Redis-backed global rate limiting. JWT tokens require an expiration; configured JWT secrets must be at least 32 bytes. Set both `tls_cert` and `tls_key` to enable server TLS. mTLS also requires `client_ca`.
+
+Timeouts are configured in seconds. The loader supplies defaults for connect, read, write, idle, and request timeout fields; the request field is currently not applied by the runtime server.
+
+For a field-by-field explanation of every setting in the repository's sample YAML, see [Configuration reference](../config-reference/). For CLI flags, environment variables, protocols, and endpoints, see [Reference](../reference/).

@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Logo from '../components/Logo.astro';
+const title = 'Leoxy — a lightweight reverse proxy';
+const description = 'Leoxy is a lightweight Go reverse proxy for routing HTTP, TCP, and UDP traffic to configured upstream services.';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const route = (path: string) => `${base}${path}`;
+const applicationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Leoxy',
+  applicationCategory: 'DeveloperApplication',
+  description,
+  url: 'https://elrefai99.github.io/Leoxy/',
+  codeRepository: 'https://github.com/elrefai99/Leoxy',
+  programmingLanguage: 'Go',
+};
+---
+<BaseLayout title={title} description={description}>
+  <script type="application/ld+json" set:html={JSON.stringify(applicationJsonLd)} />
+  <main>
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <span class="eyebrow">
+          <span>1.14.4</span>
+           proxy
+          </span>
+        <h1 id="hero-title">
+          Route everything.
+          <br />
+          Run one proxy.
+        </h1>
+        <p>Leoxy is a lightweight Go reverse proxy that sends traffic through one simple, configurable layer.</p>
+        <div class="button-row">
+          <a class="button button-primary" href={route('/docs/')}>Read the docs</a>
+          <a class="button button-secondary" href="https://github.com/elrefai99/Leoxy">View on GitHub</a>
+        </div>
+      </div>
+      <div class="hero-mark"><Logo /></div>
+    </section>
+    <section class="wrap terminal" aria-label="Get started command">
+      <p class="terminal-label"># get started</p>
+      <pre><code>docker pull mohamed0699/leoxy:latest
+  docker run --rm -p 80:80 -v "$PWD/leoxy:/app/leoxy" mohamed0699/leoxy:latest</code></pre>
+    </section>
+    <section class="wrap feature-preview" aria-labelledby="features-title">
+      <div class="section-intro">
+        <span class="eyebrow">Features</span>
+        <h2 id="features-title">A small proxy with clear controls.</h2>
+        <p>Route requests, set access policies, and operate HTTP and stream listeners.</p>
+      </div>
+      <div class="preview-cards">
+        <article>
+          <span>01</span>
+          <h3>Path-based routing</h3>
+          <p>Forward HTTP requests to the configured upstream for each path.</p>
+          <a href={route('/features/')}>Explore features</a>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Configurable security</h3>
+          <p>Set rate limits, authentication, network rules, request limits, and TLS.</p>
+          <a href={route('/features/')}>Explore features</a>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>HTTP, TCP, and UDP</h3>
+          <p>Use dedicated listeners for HTTP routes and TCP or UDP targets.</p>
+          <a href={route('/features/')}>Explore features</a>
+        </article>
+      </div>
+      <a class="text-link" href={route('/features/')}>See all features</a>
+    </section>
+    <section class="wrap steps" aria-labelledby="steps-title">
+      <h2 id="steps-title">Up and running in three steps</h2>
+      <div class="step-grid">
+        <article>
+          <span>STEP 01</span>
+          <h3>Install</h3>
+            <p>Pull the published Leoxy image from Docker Hub.</p>
+        </article>
+        <article>
+          <span>STEP 02</span>
+          <h3>Configure</h3>
+          <p>Set your HTTP upstreams in the YAML config file.</p>
+        </article>
+        <article>
+          <span>STEP 03</span>
+          <h3>Run</h3><p>Start Leoxy and send a request to your configured route.</p>
+        </article>
+      </div>
+    </section>
+    <section class="wrap cta">
+      <h2>Start with the docs</h2>
+      <p>Installation, configuration, and usage in one place.</p>
+      <a class="button button-primary" href={route('/docs/')}>Open documentation</a>
+    </section>
+  </main>
+</BaseLayout>
+<style>
+  .feature-preview{
+    padding-bottom:100px
+  }
+  .feature-preview .section-intro{
+    margin-bottom:28px
+  }
+  .feature-preview .section-intro h2{
+    font-size:40px;
+    line-height:1.15;
+    letter-spacing:-.025em;
+    color:var(--text);
+    margin:18px 0 8px
+  }
+  .feature-preview .section-intro p{
+    color:var(--muted);
+    font-size:18px
+  }
+  .preview-cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-bottom:20px
+  }
+  .preview-cards article{padding:24px;background:var(--panel);border:1px solid var(--border);border-radius:14px;min-height:210px}
+  .preview-cards article>span{
+    font:14px 'JetBrains Mono Variable',monospace;
+    color:var(--label);
+    border:1px solid var(--strong);
+    border-radius:7px;padding:6px 9px
+  }
+  .preview-cards h3{
+    font-size:20px;
+    color:var(--text);
+    margin:20px 0 8px
+  }
+  .preview-cards p{
+    color:var(--muted);
+    margin-bottom:16px
+  }
+  .preview-cards a,.text-link{
+    color:var(--text);
+    text-decoration:underline;
+    text-underline-offset:4px
+  }
+  .preview-cards a:hover,.text-link:hover{
+    color:var(--muted)
+  }
+  @media(max-width:900px){
+    .preview-cards{
+      grid-template-columns:repeat(2,1fr)
+    }
+  }
+  @media(max-width:640px){
+    .feature-preview{
+        padding-bottom:72px
+    }
+    .feature-preview .section-intro h2{
+        font-size:32px
+    }
+    .preview-cards{
+        grid-template-columns:1fr
+    }
+    .preview-cards article{
+      min-height:0
+    }
+  }
+</style>

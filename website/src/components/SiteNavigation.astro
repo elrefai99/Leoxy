@@ -1,0 +1,9 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const route = (path: string) => `${base}${path}`;
+---
+<nav class="site-nav-links" aria-label="Site navigation">
+  <a href={route('/features/')}>Features</a>
+  <a href={route('/docs/')}>Docs</a>
+  <a class="github-link" href="https://github.com/elrefai99/Leoxy">GitHub</a>
+</nav>

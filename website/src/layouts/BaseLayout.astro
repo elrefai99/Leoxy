@@ -1,0 +1,38 @@
+---
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+const { title, description } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const route = (path: string) => `${base}${path}`;
+const canonical = new URL('/Leoxy/', 'https://elrefai99.github.io');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={route('/favicon.svg')} />
+    <link rel="apple-touch-icon" href={route('/apple-touch-icon.png')} />
+    <meta property="og:type" content="website" /><meta property="og:title" content={title} />
+    <meta property="og:description" content={description} /><meta property="og:url" content={canonical} />
+    <meta property="og:image" content="https://elrefai99.github.io/Leoxy/social-card.png" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} /><meta name="twitter:image" content="https://elrefai99.github.io/Leoxy/social-card.png" />
+  </head>
+  <body>
+    <header class="site-header"><nav class="nav-wrap" aria-label="Main navigation">
+      <a class="brand" href={import.meta.env.BASE_URL} aria-label="Leoxy home"><Logo /><span>Leoxy</span></a>
+      <div class="nav-links">
+        <a href={route('/features/')}>Features</a>
+        <a href={route('/docs/')}>Docs</a>
+        <a class="button button-secondary" href="https://github.com/elrefai99/Leoxy">GitHub</a>
+      </div>
+    </nav></header>
+    <slot />
+    <SiteFooter />
+  </body>
+</html>

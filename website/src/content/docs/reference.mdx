@@ -1,0 +1,49 @@
+---
+title: Reference
+description: CLI flags, environment variables, protocols, and built-in HTTP endpoints.
+slug: docs/reference
+---
+
+## CLI
+
+| Command or flag | Behavior |
+| --- | --- |
+| `leoxy` | Run the server in the foreground. |
+| `leoxy start` | Start the server in the background. |
+| `leoxy restart` | Restart the background server. |
+| `leoxy stop` | Stop the background server. |
+| `leoxy version` | Print the executable version. |
+| `--config PATH` | Select a configuration file. |
+| `--data-dir DIR` | Set the working directory for relative paths and runtime data. |
+
+## Protocol values
+
+The config validator accepts `http`, `https`, `http2`, `graphql`, and `websocket` for HTTP route entries (and an empty value for compatibility). They use the HTTP reverse proxy handler; the label does not create a separate listener. Use `tcp` or `udp` with `listen` and `server_url` for stream entries.
+
+## Built-in HTTP endpoints
+
+| Path | Behavior |
+| --- | --- |
+| `/ping` | Returns `PONG`. |
+| `/health/live` | Returns process liveness without checking upstream availability. |
+| `/health/ready` | Checks readiness of configured HTTP upstreams. |
+| `/metrics` | Exposes request/response metrics and watcher samples. |
+| `/leoxy` | Serves the bundled Leoxy information page. |
+
+`/metrics`, `/health/ready`, and `/leoxy` are restricted to internal CIDRs when internal CIDR restrictions are configured.
+
+## Environment variables
+
+| Variable | Setting |
+| --- | --- |
+| `PORT` | Overrides `server.port`. |
+| `LEOXY_HOST` | Overrides `server.host`. |
+| `RATE_LIMIT` | Overrides the legacy server-level per-IP rate limit. |
+| `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE` | Global JWT verification settings. |
+| `API_KEYS` | Comma-separated global API keys. |
+| `REDIS_PASSWORD` | Global Redis password. |
+| `MEMORY_LIMIT_MB`, `PROJECT_NAME`, `Watcher_WEBHOOK_URL` | Watcher settings. |
+
+## Validation
+
+Startup validation rejects unsupported protocol values, missing targets, invalid upstream URLs, duplicate or reserved HTTP paths, repeated stream listener addresses, invalid CIDRs, negative limits, incomplete TLS settings, and incomplete mTLS settings.

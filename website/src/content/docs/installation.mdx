@@ -1,0 +1,55 @@
+---
+title: Installation
+description: Install Leoxy from Docker Hub or build the CLI from source.
+slug: docs/installation
+---
+
+## Install with Docker
+
+Install Docker, then pull the published image from Docker Hub:
+
+```sh
+docker pull mohamed0699/leoxy:latest
+```
+
+Run the container and mount a local `leoxy/` directory for configuration and persisted runtime files:
+
+```sh
+docker run --rm -p 80:80 -v "$PWD/leoxy:/app/leoxy" mohamed0699/leoxy:latest
+```
+
+Leoxy reads `/app/leoxy/leoxy_config.yaml`. If it does not exist, Leoxy creates a default configuration there. Add your upstreams to that file before sending application traffic. To publish the container on a different host port, change the left side of the mapping, such as `-p 8080:80`.
+
+The image listens on container port `80` and includes a liveness health check at `/health/live`. For Docker Compose, upstream networking, and persistence details, see the [Docker deployment guide](https://github.com/elrefai99/Leoxy/blob/main/docs/docker.md).
+
+## Build from source
+
+For a source build, install the Go toolchain version declared in `app/go.mod` (`go 1.27.4`) and Git. Clone the repository:
+
+```sh
+git clone https://github.com/elrefai99/Leoxy
+cd Leoxy
+```
+
+Build the CLI from the repository root:
+
+```sh
+go build -o leoxy ./app/cli
+```
+
+On Windows, choose an `.exe` output name:
+
+```powershell
+go build -o leoxy.exe ./app/cli
+```
+
+The project contains platform-specific process handling for Windows, Linux, and macOS. The repository does not document or guarantee a complete supported-platform/version matrix; consult the build workflow and test on your target environment.
+
+To verify the binary and run the server:
+
+```sh
+./leoxy version
+./leoxy
+```
+
+On Windows, replace `./leoxy` with `./leoxy.exe`. The server reads `leoxy/leoxy_config.yaml` relative to its working directory and creates a default file when missing. Use [Configuration](../configuration/) to add routes before sending traffic through it.
