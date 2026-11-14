@@ -1,10 +1,15 @@
-# Leoxy
+<div align="center">
 
-A lightweight reverse proxy built in Go.
+  <img src="./docs/_static/leoxy.png" width="110" alt="Logo" />
 
-## Description
+<p>
+  A lightweight reverse proxy built in Go.
+  <br/>
+  LX-2 routes HTTP requests to configurable upstream servers based on path prefixes. It supports HTTP/1.1, HTTP/2 upstreams, WebSocket upgrades, GraphQL over HTTP, and raw TCP/UDP traffic through dedicated listeners.
+</p>
+</div>
 
-LX-2 routes HTTP requests to configurable upstream servers based on path prefixes. It supports HTTP/1.1, HTTP/2 upstreams, WebSocket upgrades, GraphQL over HTTP, and raw TCP/UDP traffic through dedicated listeners.
+---
 
 ## Deployment architecture
 
